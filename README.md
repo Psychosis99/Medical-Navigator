@@ -1,10 +1,23 @@
 # Medical Navigator — Android MVP
 
-A patient-side **medical navigator** for the Indian healthcare panorama, built for
-Tier-2/Tier-3 and semi-urban India (pilot geography: Siliguri / North Bengal +
-Kolkata). It helps a patient **find the right doctor**, **know the cost before
-leaving home**, and **actually use their health insurance** instead of being
-surprised at the billing desk.
+**A patient's co-pilot for getting treated in India without being over-charged,
+mis-routed, or blindsided by a bill.**
+
+Built for Tier-2/Tier-3 and semi-urban India — the pilot geography is Siliguri /
+North Bengal and Kolkata — where the problem is rarely a shortage of doctors.
+It is that a patient has no reliable way to answer four questions *before* they
+leave the house:
+
+| The question | What happens today |
+|---|---|
+| **Which kind of doctor do I even need?** | People start at the wrong specialist, or at whoever a neighbour recommends, and lose weeks and consultation fees finding out |
+| **What will this actually cost me?** | The OPD fee is the small part. The tests that follow are the real bill, and nobody quotes them up front |
+| **Will my insurance work at this hospital?** | Cashless depends on the *hospital* being empanelled, not just on holding a policy. Patients discover this at the admission desk |
+| **Who is worth trusting?** | Ratings, fees and credentials live in scattered places, if anywhere |
+
+Medical Navigator collapses those four into one flow. It does **not** diagnose,
+prescribe, or replace a doctor. It does the navigation — the part that currently
+costs patients money and time purely through lack of information.
 
 **Download:** [`dist/MedicalNavigator-v1.0.0.apk`](dist/MedicalNavigator-v1.0.0.apk)
 — ~90 KB, Android 7.0+ (API 24), installable and shareable over WhatsApp.
@@ -12,11 +25,46 @@ surprised at the billing desk.
 > **This is a pilot/demo build.** Every doctor, hospital, lab, insurer and policy
 > clause in it is **fictional sample data**, clearly labelled as such inside the
 > app. It is a navigation aid, not medical advice, and it does not diagnose.
-> See [Honest limitations](#honest-limitations).
+> See [Honest limitations](#6-honest-limitations).
 
 ---
 
 ## 1. What it does
+
+### The journey, in plain terms
+
+A patient opens the app, picks their language, and enters a few facts once: city,
+age, any ongoing condition, and their insurance if they have one. From then on
+every screen is filtered to *them*.
+
+They describe the problem in their own words — "sugar high, always thirsty" —
+and the app names the specialty they need and flags the symptoms that mean
+**go to an emergency room instead of booking anything**. It then shows the
+doctors of that specialty in their city, ranked so that a trustworthy cheap
+option can beat an expensive one, and marked with whether that specific
+doctor-and-hospital pair will actually settle *their* insurer cashless.
+
+Before they commit, they see the **whole** likely cost: the consultation fee band
+plus the tests that specialty usually orders, priced against the cheapest partner
+lab in their city — so the number on screen is what they should carry, not just
+the doctor's fee. They can book an OPD slot, or start a teleconsult chat where
+the first ten minutes are free.
+
+If an admission is coming, the insurance section answers the question that
+actually decides the bill: *is this hospital cashless for me?* It gives a yes/no,
+the exact pre-authorisation or reimbursement steps in order, the documents to
+carry, the clauses that limit the claim, and — if the answer is no — the
+cashless hospitals nearby that would have said yes.
+
+Afterwards they rate the doctor, the hospital and how the insurance help went.
+The doctor and hospital ratings are folded straight back into that provider's
+aggregate, which re-orders the search results — so the directory is corrected by
+the people using it rather than by whoever paid for placement. That loop is the
+product thesis: **the navigator should get more useful the more it is used,
+without anyone having to trust a brand.** In this build the loop closes on the
+device only; pooling ratings across patients needs the Phase-II backend.
+
+### Feature by feature
 
 | Area | In this build |
 |---|---|
@@ -31,8 +79,16 @@ surprised at the billing desk.
 | **Emergency** | One-tap dial for 108 / 112 / 104 / 14416 / 1098 / 181 / 14555 plus the nearest hospitals with a 24×7 emergency unit |
 | **Pilot metrics** | On-device funnel (search → doctor view → booking → completed → rated) with conversion rates, so a pilot team can read retention and conversion without any server or tracking SDK |
 
-Everything runs **on the phone**: no account, no server, no analytics SDK, and
-no data leaves the device.
+### Why it all runs on the phone
+
+Everything above works with the aeroplane mode on: no account, no server, no
+analytics SDK, and no data leaves the device. That is a deliberate design
+choice, not a limitation of the prototype. Health information is the most
+sensitive category a person has; connectivity in the target belt is patchy and
+metered; and a 90 KB APK installs over a bad connection and shares peer-to-peer
+over WhatsApp, which is how apps actually spread in this market. A patient can
+check whether a hospital is cashless for them while standing at its gate with
+no signal.
 
 ### Screenshots
 
@@ -204,6 +260,7 @@ they matter:
 - **Triage is keyword rules, not AI** — a deliberate choice: every mapping stays auditable by a clinician, and it cannot hallucinate. Red-flag warnings are attached to each condition.
 - **Clinical content is English-only.** The UI chrome is translated to Hindi and Bengali; machine-translating clinical text without clinician review would be the wrong shortcut.
 - **No ABDM/ABHA integration.** The profile stores an ABHA number for later linking.
+- **The ratings loop is on-device.** Feedback re-ranks the directory on the phone that gave it; it does not reach other patients until there is a backend to pool it.
 
 ---
 
