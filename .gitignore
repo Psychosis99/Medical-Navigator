@@ -1,0 +1,19 @@
+# build outputs
+build/
+*.ap_
+*.dex
+
+# fetched toolchain (see tools/fetch-toolchain.sh)
+.toolchain/
+
+# signing key - never commit this
+.keystore/
+*.p12
+*.jks
+*.keystore
+
+# editors / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store

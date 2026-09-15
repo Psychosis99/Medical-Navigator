@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive-icon foreground: a medical cross inside a navigator compass ring. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,26.5c-15.2,0 -27.5,12.3 -27.5,27.5S38.8,81.5 54,81.5S81.5,69.2 81.5,54S69.2,26.5 54,26.5zM54,75.5c-11.9,0 -21.5,-9.6 -21.5,-21.5S42.1,32.5 54,32.5S75.5,42.1 75.5,54S65.9,75.5 54,75.5z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M58.6,40.2h-9.2v9.2h-9.2v9.2h9.2v9.2h9.2v-9.2h9.2v-9.2h-9.2z" />
+    <path
+        android:fillColor="#FFB2F5EA"
+        android:pathData="M54,18.5l4.6,7.9h-9.2zM54,89.5l-4.6,-7.9h9.2z" />
+</vector>
