@@ -90,7 +90,7 @@
       }
       view.appendChild(UI.section(I18n.t('what_is_it_about'), UI.card([
         el('p.small.muted', { style: 'margin:0 0 8px',
-          text: 'Pick what it is about and we route you to the right person.' }),
+          text: 'Pick a topic so the consultant has context before you start.' }),
         topicWrap
       ])));
 
@@ -108,13 +108,20 @@
       }
 
       var team = el('div');
+      var others = 0;
       for (var m = 0; m < res.team.length; m++) {
         if (res.team[m].id === primary.id) continue;
         team.appendChild(teamCard(res.team[m]));
+        others++;
       }
-      view.appendChild(UI.section(I18n.t('care_team'), team));
+      if (others) view.appendChild(UI.section(I18n.t('care_team'), team));
 
       view.appendChild(UI.section(I18n.t('helps_with'), UI.card([
+        el('button.block-link', {
+          style: 'float:right',
+          text: 'Full profile \u203A',
+          onclick: function () { Router.go('consultant', { id: primary.id }); }
+        }),
         (function () {
           var ul = el('ul.checklist');
           for (var h = 0; h < primary.helpsWithList.length; h++) {
@@ -234,7 +241,12 @@
       for (var h = 0; h < c.helpsWithList.length; h++) {
         ul.appendChild(el('li', null, [el('span', { text: c.helpsWithList[h] })]));
       }
-      view.appendChild(UI.section(I18n.t('helps_with'), UI.card([ul])));
+      view.appendChild(UI.section(I18n.t('helps_with'), UI.card([
+        el('button.block-link', {
+          style: 'float:right',
+          text: 'Full profile \u203A',
+          onclick: function () { Router.go('consultant', { id: primary.id }); }
+        }),ul])));
 
       view.appendChild(UI.button(I18n.t('start_chat'), {
         block: true,

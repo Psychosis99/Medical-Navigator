@@ -153,7 +153,7 @@ async function main() {
   await tapButton('Start using the app');
   await page.waitForTimeout(300);
   check('guide hands over to the care team',
-    (await body()).includes('Dr. Ipsita Sengupta'));
+    (await body()).includes('Dr. Sashanka Dey'));
   check('guide is not shown again',
     (await page.evaluate(() => Store.hasSeenGuide())) === true);
 
@@ -163,8 +163,11 @@ async function main() {
   check('primary consultant named', text.includes('Lead Consultant'));
   check('availability shown', text.includes('Available now') || text.includes('Away right now'));
   check('consult topics offered', text.includes('Which doctor should I see?'));
-  check('wider care team listed',
-    text.includes('Rina Tamang') && text.includes('Sourav Mitra'));
+  check('no empty team section while there is only one consultant',
+    !text.includes('Your care team'));
+  check('every topic routes to the lead consultant',
+    (await page.evaluate(() => Native.call('consult_team', {})
+      .topics.every(function (t) { return t.role === 'primary'; }))) === true);
   await shot('07-consult-hub');
 
   await tapButton('Which doctor should I see?');
@@ -176,7 +179,7 @@ async function main() {
   await page.waitForTimeout(350);
   text = await body();
   check('consult thread opens with the consultant greeting',
-    text.includes('I am Dr. Ipsita Sengupta'));
+    text.includes('I am Dr. Sashanka Dey'));
   check('the patient note is carried into the thread',
     text.includes('which doctor to see'));
   check('consultant answers the routing question',
@@ -186,6 +189,16 @@ async function main() {
   await page.waitForTimeout(250);
   check('follow-up gets a care-team reply',
     (await body()).includes('which ones change the treatment'));
+  await page.fill('.composer input.input', 'can you book an appointment for me');
+  await tapButton('Send');
+  await page.waitForTimeout(250);
+  check('the consultant also answers logistics questions',
+    (await body()).includes('I can arrange it'));
+  await page.fill('.composer input.input', 'my cashless claim was rejected');
+  await tapButton('Send');
+  await page.waitForTimeout(250);
+  check('the consultant also answers claim questions',
+    (await body()).includes('the reason letter matters most'));
   await shot('09-consult-chat');
 
   await page.evaluate(() => Router.tab('consult'));

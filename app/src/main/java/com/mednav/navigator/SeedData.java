@@ -177,10 +177,14 @@ final class SeedData {
     };
 
     /**
-     * The in-house care team a patient reaches first — the service's own
-     * consultants rather than a listing from the directory. This is the app's
+     * The in-house consultant a patient reaches first — the service's own
+     * doctor rather than a listing from the directory. This is the app's
      * primary promise: someone answerable who tells you which specialist you
      * actually need before you spend anything.
+     *
+     * One consultant for now. The role column stays because the request flow
+     * routes by role, so adding an associate or an insurance desk later is a
+     * seed change rather than a code change.
      *
      * id|name|role|title|qualification|specialty|exp_years|languages|hours|sla|
      * fee_note|rating|rating_count|helps_with|bio
@@ -188,10 +192,7 @@ final class SeedData {
      * role: primary | associate | coordinator | insurance
      */
     static final String[] CONSULTANTS = {
-        "cn_lead|Dr. Ipsita Sengupta|primary|Lead Consultant, Care Team|MBBS, MD (General Medicine)|General Medicine|16|Bengali,Hindi,English|Mon-Sat, 8:00 AM - 9:00 PM|Replies within 30 minutes in working hours|First consult free. Follow-ups Rs 199.|4.7|1268|Which specialist you need,Second opinion on a prescription,Understanding a test report,Whether a test is really necessary,Which hospital to choose|Your first point of contact. Sixteen years in general medicine and family practice across North Bengal, with a habit of asking what a test will change before ordering it.",
-        "cn_assoc|Dr. Arnab Roy|associate|Associate Consultant|MBBS, DNB (Family Medicine)|Family Medicine|9|Hindi,Bengali,Nepali|Mon-Sun, 7:00 AM - 11:00 PM|Replies within 1 hour|First consult free. Follow-ups Rs 149.|4.5|734|Everyday illness,Medicine doubts,Child and elderly care questions,After-hours queries|Covers early mornings, late nights and Sundays, so there is always someone to ask.",
-        "cn_coord|Rina Tamang|coordinator|Care Coordinator|Health administration|Appointments and logistics|7|Nepali,Hindi,Bengali|Mon-Sat, 9:00 AM - 7:00 PM|Calls back within 2 hours|Free|4.6|512|Booking an appointment,Arranging lab tests,Getting reports collected,Travel and timing for a hospital visit|Handles the running around: slots, labs, report pickups and what to carry.",
-        "cn_ins|Sourav Mitra|insurance|Insurance Desk|Health insurance claims|Cashless and claims|11|Bengali,Hindi,English|Mon-Sat, 10:00 AM - 6:00 PM|Replies within 3 hours|Free|4.4|398|Cashless pre-authorisation,Documents for a claim,A rejected or reduced claim,Choosing a network hospital|Sits between you and the TPA so a claim does not stall on a missing paper."
+        "cn_lead|Dr. Sashanka Dey|primary|Lead Consultant, Care Team|MBBS, MD (General Medicine)|General Medicine|16|Bengali,Hindi,English|Mon-Sat, 8:00 AM - 9:00 PM|Replies within 30 minutes in working hours|First consult free. Follow-ups Rs 199.|4.7|1268|Which specialist you need,Second opinion on a prescription,Understanding a test report,Whether a test is really necessary,Which hospital to choose,Booking an appointment or lab test,Insurance and claim questions|Your first point of contact. Sixteen years in general medicine and family practice across North Bengal, with a habit of asking what a test will change before ordering it."
     };
 
     /** Why a patient reaches out. id|label|consultant_role|hint */
@@ -201,9 +202,9 @@ final class SeedData {
         "t_report|Help me understand my report|primary|Type the values, or the test name and result.",
         "t_needed|Is this test really needed?|primary|Tell us what was advised and why.",
         "t_hospital|Which hospital should I go to?|primary|We weigh cost, distance and whether your cover works there.",
-        "t_everyday|Everyday illness or medicine doubt|associate|Fever, pain, stomach upset, dosage questions.",
-        "t_appoint|Book an appointment or lab test|coordinator|We arrange the slot and tell you what to carry.",
-        "t_claim|Help with insurance or a claim|insurance|Pre-authorisation, documents, or a claim that stalled.",
+        "t_everyday|Everyday illness or medicine doubt|primary|Fever, pain, stomach upset, dosage questions.",
+        "t_appoint|Book an appointment or lab test|primary|We arrange the slot and tell you what to carry.",
+        "t_claim|Help with insurance or a claim|primary|Pre-authorisation, documents, or a claim that stalled.",
         "t_other|Something else|primary|Tell us in your own words."
     };
 
@@ -227,7 +228,7 @@ final class SeedData {
         "General Medicine|report,value,result|Type the test name and the value, with the lab's normal range if printed. I will tell you whether it needs action now, watching, or nothing at all.",
         "General Medicine|is this test needed,why this test,so many tests|Fair question to ask. Tell me what was advised and for what complaint, and I will say which ones change the treatment and which can wait.",
         "General Medicine|which hospital,where should i go,admission|I will weigh three things for you: distance, the likely bill, and whether your cover is accepted there. Tell me your city and what the admission is for.",
-        "Appointments and logistics|book,appointment,slot,lab,report|I can arrange it. Tell me the doctor or test, the city, and roughly when suits you - morning, afternoon or evening - and I will confirm the slot and what to carry.",
-        "Cashless and claims|claim,cashless,pre-auth,rejected,tpa|Send me the hospital name, your insurer and what stage you are at. If a claim was reduced or rejected, the reason letter matters most - type what it says."
+        "General Medicine|book an appointment,arrange a slot,book a test|I can arrange it. Tell me the doctor or test, the city, and roughly when suits you - morning, afternoon or evening - and I will confirm the slot and what to carry.",
+        "General Medicine|claim,cashless,pre-auth,rejected,tpa|Send me the hospital name, your insurer and what stage you are at. If a claim was reduced or rejected, the reason letter matters most - type what it says."
     };
 }
