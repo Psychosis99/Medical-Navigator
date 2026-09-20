@@ -14,7 +14,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 final class DbHelper extends SQLiteOpenHelper {
 
     static final String DB_NAME = "mednav.db";
-    static final int DB_VERSION = 1;
+    static final int DB_VERSION = 2;   // v2: in-house care team + consult requests
 
     DbHelper(Context ctx) {
         super(ctx, DB_NAME, null, DB_VERSION);
@@ -68,6 +68,17 @@ final class DbHelper extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE chat_rules("
                 + "specialty TEXT, keywords TEXT, reply TEXT)");
 
+        // The in-house care team: the service's own consultants, which is what
+        // makes this a navigator rather than a directory.
+        db.execSQL("CREATE TABLE consultants("
+                + "id TEXT PRIMARY KEY, name TEXT, role TEXT, title TEXT,"
+                + "qualification TEXT, specialty TEXT, exp_years INTEGER,"
+                + "languages TEXT, hours TEXT, sla TEXT, fee_note TEXT,"
+                + "rating REAL, rating_count INTEGER, helps_with TEXT, bio TEXT)");
+
+        db.execSQL("CREATE TABLE consult_topics("
+                + "id TEXT PRIMARY KEY, label TEXT, role TEXT, hint TEXT)");
+
         // ---- patient-generated data ----
         db.execSQL("CREATE TABLE profile(k TEXT PRIMARY KEY, v TEXT)");
 
@@ -88,6 +99,13 @@ final class DbHelper extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE records("
                 + "id TEXT PRIMARY KEY, kind TEXT, title TEXT, body TEXT, ts INTEGER)");
 
+        // A patient's requests to the care team. Threads share the messages
+        // table with teleconsult bookings, keyed by this id.
+        db.execSQL("CREATE TABLE consult_requests("
+                + "id TEXT PRIMARY KEY, consultant_id TEXT, channel TEXT,"
+                + "topic TEXT, note TEXT, preferred_time TEXT, status TEXT,"
+                + "created_ts INTEGER, rated INTEGER DEFAULT 0)");
+
         db.execSQL("CREATE TABLE claims("
                 + "id TEXT PRIMARY KEY, hospital_id TEXT, insurer_id TEXT, plan TEXT,"
                 + "route TEXT, status TEXT, amount INTEGER, created_ts INTEGER, notes TEXT)");
@@ -101,16 +119,29 @@ final class DbHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // MVP policy: reference data is disposable, patient data is not. There is
-        // no schema migration to run yet, so a future version re-seeds reference
-        // tables only and leaves patient tables untouched.
+        // Reference data is disposable, patient data is not: create whatever
+        // tables this version added, then re-seed reference tables only.
+        if (oldVersion < 2) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS consultants("
+                    + "id TEXT PRIMARY KEY, name TEXT, role TEXT, title TEXT,"
+                    + "qualification TEXT, specialty TEXT, exp_years INTEGER,"
+                    + "languages TEXT, hours TEXT, sla TEXT, fee_note TEXT,"
+                    + "rating REAL, rating_count INTEGER, helps_with TEXT, bio TEXT)");
+            db.execSQL("CREATE TABLE IF NOT EXISTS consult_topics("
+                    + "id TEXT PRIMARY KEY, label TEXT, role TEXT, hint TEXT)");
+            db.execSQL("CREATE TABLE IF NOT EXISTS consult_requests("
+                    + "id TEXT PRIMARY KEY, consultant_id TEXT, channel TEXT,"
+                    + "topic TEXT, note TEXT, preferred_time TEXT, status TEXT,"
+                    + "created_ts INTEGER, rated INTEGER DEFAULT 0)");
+        }
         reseedReference(db);
     }
 
     /** Drops and re-inserts only the shipped reference tables. */
     void reseedReference(SQLiteDatabase db) {
         String[] refTables = {"hospitals", "doctors", "tests", "labs", "lab_tests",
-                "insurers", "policy_clauses", "conditions", "chat_rules"};
+                "insurers", "policy_clauses", "conditions", "chat_rules",
+                "consultants", "consult_topics"};
         for (int i = 0; i < refTables.length; i++) {
             db.execSQL("DELETE FROM " + refTables[i]);
         }
@@ -152,6 +183,14 @@ final class DbHelper extends SQLiteOpenHelper {
 
             insertRows(db, "chat_rules", SeedData.CHAT_RULES, new String[]{
                     "specialty", "keywords", "reply"});
+
+            insertRows(db, "consultants", SeedData.CONSULTANTS, new String[]{
+                    "id", "name", "role", "title", "qualification", "specialty",
+                    "exp_years", "languages", "hours", "sla", "fee_note",
+                    "rating", "rating_count", "helps_with", "bio"});
+
+            insertRows(db, "consult_topics", SeedData.CONSULT_TOPICS, new String[]{
+                    "id", "label", "role", "hint"});
 
             ContentValues seedVersion = new ContentValues();
             seedVersion.put("k", "seed_version");

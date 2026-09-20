@@ -21,7 +21,11 @@ const COLUMNS = {
   INSURERS: ['id', 'name', 'kind', 'tpa', 'helpline', 'note'],
   POLICY_CLAUSES: ['insurer_id', 'plan', 'kind', 'heading', 'body'],
   CONDITIONS: ['id', 'label', 'specialty', 'tests', 'red_flags', 'keywords'],
-  CHAT_RULES: ['specialty', 'keywords', 'reply']
+  CHAT_RULES: ['specialty', 'keywords', 'reply'],
+  CONSULTANTS: ['id', 'name', 'role', 'title', 'qualification', 'specialty',
+    'exp_years', 'languages', 'hours', 'sla', 'fee_note', 'rating', 'rating_count',
+    'helps_with', 'bio'],
+  CONSULT_TOPICS: ['id', 'label', 'role', 'hint']
 };
 
 const NUMERIC = new Set(['distance_km', 'beds', 'rating', 'rating_count', 'abdm', 'emergency',

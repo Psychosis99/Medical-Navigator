@@ -44,6 +44,10 @@ final class Repo {
         if ("triage".equals(op)) return triage(a);
         if ("create_booking".equals(op)) return createBooking(a);
         if ("bookings".equals(op)) return bookings();
+        if ("consult_team".equals(op)) return consultTeam();
+        if ("consult_request".equals(op)) return createConsultRequest(a);
+        if ("consult_requests".equals(op)) return consultRequests();
+        if ("update_consult_request".equals(op)) return updateConsultRequest(a);
         if ("update_booking".equals(op)) return updateBooking(a);
         if ("messages".equals(op)) return messages(a.getString("bookingId"));
         if ("send_message".equals(op)) return sendMessage(a);
@@ -83,7 +87,7 @@ final class Repo {
     private JSONObject saveProfile(JSONObject a) throws JSONException {
         SQLiteDatabase db = helper.getWritableDatabase();
         String[] keys = {"name", "phone", "age", "sex", "city", "conditions",
-                "insurer_id", "plan", "abha", "lang", "onboarded"};
+                "insurer_id", "plan", "abha", "lang", "onboarded", "guide_seen"};
         db.beginTransaction();
         try {
             for (int i = 0; i < keys.length; i++) {
@@ -579,6 +583,8 @@ final class Repo {
         String body = a.getString("body");
         insertMessage(db, bookingId, "patient", body);
 
+        // A thread id is either a doctor booking or a care-team request; both
+        // share the messages table, so resolve whichever one owns this id.
         String specialty = "";
         Cursor c = db.rawQuery("SELECT d.specialty FROM bookings b"
                 + " JOIN doctors d ON d.id = b.doctor_id WHERE b.id = ?",
@@ -587,6 +593,16 @@ final class Repo {
             if (c.moveToNext()) specialty = c.getString(0);
         } finally {
             c.close();
+        }
+        if (TextUtils.isEmpty(specialty)) {
+            c = db.rawQuery("SELECT cn.specialty FROM consult_requests r"
+                    + " JOIN consultants cn ON cn.id = r.consultant_id WHERE r.id = ?",
+                    new String[]{bookingId});
+            try {
+                if (c.moveToNext()) specialty = c.getString(0);
+            } finally {
+                c.close();
+            }
         }
 
         String reply = matchReply(db, specialty, body.toLowerCase(Locale.ENGLISH));
@@ -681,6 +697,151 @@ final class Repo {
         }
         event(db, "rating_submitted", kind + "=" + targetId + ";stars=" + stars);
         return ok();
+    }
+
+    // ------------------------------------------------------------------
+    // the in-house care team (the app's primary feature)
+    // ------------------------------------------------------------------
+
+    /** The consultants a patient can reach directly, plus their open threads. */
+    private JSONObject consultTeam() throws JSONException {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        JSONArray team = rows(db,
+                "SELECT * FROM consultants ORDER BY CASE role WHEN 'primary' THEN 1"
+              + " WHEN 'associate' THEN 2 WHEN 'coordinator' THEN 3 ELSE 4 END");
+        for (int i = 0; i < team.length(); i++) {
+            JSONObject c = team.getJSONObject(i);
+            c.put("helpsWithList", csvToArray(c.optString("helps_with")));
+            c.put("languageList", csvToArray(c.optString("languages")));
+            c.put("available", withinHours(c.optString("hours")));
+            c.put("sample", true);
+        }
+        JSONObject out = ok();
+        out.put("team", team);
+        out.put("topics", rows(db, "SELECT * FROM consult_topics"));
+        out.put("requests", consultRequests().optJSONArray("requests"));
+        return out;
+    }
+
+    /**
+     * Opens a request to the care team. A chat request starts a thread straight
+     * away with the consultant's greeting; call, WhatsApp and video requests are
+     * queued for a callback, because this build has no telephony behind it.
+     */
+    private JSONObject createConsultRequest(JSONObject a) throws JSONException {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        String consultantId = a.optString("consultantId", "");
+        String channel = a.optString("channel", "chat");   // chat|call|whatsapp|video
+
+        JSONArray found = rows(db, "SELECT * FROM consultants WHERE id = ?",
+                new String[]{consultantId});
+        if (found.length() == 0) {
+            // Fall back to the lead consultant rather than failing the request.
+            found = rows(db, "SELECT * FROM consultants WHERE role = 'primary' LIMIT 1");
+            if (found.length() == 0) throw new IllegalStateException("no care team seeded");
+        }
+        JSONObject consultant = found.getJSONObject(0);
+        consultantId = consultant.optString("id");
+
+        String id = "cr_" + System.currentTimeMillis();
+        ContentValues cv = new ContentValues();
+        cv.put("id", id);
+        cv.put("consultant_id", consultantId);
+        cv.put("channel", channel);
+        cv.put("topic", a.optString("topic", ""));
+        cv.put("note", a.optString("note", ""));
+        cv.put("preferred_time", a.optString("preferredTime", ""));
+        cv.put("status", "chat".equals(channel) ? "open" : "requested");
+        cv.put("created_ts", System.currentTimeMillis());
+        db.insert("consult_requests", null, cv);
+
+        String patientName = profileValue(db, "name");
+        String greetingName = TextUtils.isEmpty(patientName) ? ""
+                : (" " + patientName.split(" ")[0]);
+        if ("chat".equals(channel)) {
+            insertMessage(db, id, "doctor", "Namaskar" + greetingName + ", I am "
+                    + consultant.optString("name") + ", "
+                    + consultant.optString("title") + ". "
+                    + consultant.optString("sla") + ". Tell me what is going on in"
+                    + " your own words - when it started, what you have already"
+                    + " taken, and any report values you have.");
+            if (!TextUtils.isEmpty(a.optString("note", ""))) {
+                insertMessage(db, id, "patient", a.optString("note"));
+                insertMessage(db, id, "doctor", matchReply(db,
+                        consultant.optString("specialty"),
+                        a.optString("note").toLowerCase(Locale.ENGLISH)));
+            }
+        } else {
+            insertMessage(db, id, "doctor", "Request received. "
+                    + consultant.optString("name") + " will reach you on "
+                    + channelLabel(channel) + ". " + consultant.optString("sla") + ".");
+        }
+        event(db, "consult_request", "channel=" + channel + ";consultant=" + consultantId);
+
+        JSONObject out = ok();
+        out.put("requestId", id);
+        out.put("consultant", consultant);
+        out.put("channel", channel);
+        out.put("requests", consultRequests().optJSONArray("requests"));
+        return out;
+    }
+
+    private JSONObject consultRequests() throws JSONException {
+        SQLiteDatabase db = helper.getReadableDatabase();
+        JSONArray list = rows(db,
+                "SELECT r.*, c.name AS consultant_name, c.title AS consultant_title,"
+              + " c.role AS consultant_role, c.specialty, c.sla, c.hours"
+              + " FROM consult_requests r"
+              + " LEFT JOIN consultants c ON c.id = r.consultant_id"
+              + " ORDER BY r.created_ts DESC");
+        for (int i = 0; i < list.length(); i++) {
+            JSONObject r = list.getJSONObject(i);
+            r.put("messageCount", scalar(db,
+                    "SELECT COUNT(*) FROM messages WHERE booking_id = ?",
+                    new String[]{r.optString("id")}));
+            r.put("channelLabel", channelLabel(r.optString("channel")));
+        }
+        JSONObject out = ok();
+        out.put("requests", list);
+        return out;
+    }
+
+    private JSONObject updateConsultRequest(JSONObject a) throws JSONException {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("status", a.getString("status"));
+        db.update("consult_requests", cv, "id = ?", new String[]{a.getString("id")});
+        event(db, "consult_" + a.getString("status"), a.getString("id"));
+        return consultRequests();
+    }
+
+    private static String channelLabel(String channel) {
+        if ("call".equals(channel)) return "a phone call";
+        if ("whatsapp".equals(channel)) return "WhatsApp";
+        if ("video".equals(channel)) return "a video consult";
+        return "chat";
+    }
+
+    /** Rough "are they on duty now" check against a "Mon-Sat, 8:00 AM - 9:00 PM" string. */
+    private static boolean withinHours(String hours) {
+        if (TextUtils.isEmpty(hours)) return false;
+        java.util.Calendar now = java.util.Calendar.getInstance();
+        int dow = now.get(java.util.Calendar.DAY_OF_WEEK);   // 1 = Sunday
+        if (dow == java.util.Calendar.SUNDAY && hours.indexOf("Mon-Sat") >= 0) return false;
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("(\\d{1,2}):(\\d{2})\\s*(AM|PM)")
+                .matcher(hours);
+        int[] bounds = new int[2];
+        int found = 0;
+        while (m.find() && found < 2) {
+            int hour = Integer.parseInt(m.group(1)) % 12;
+            if ("PM".equals(m.group(3))) hour += 12;
+            bounds[found++] = hour * 60 + Integer.parseInt(m.group(2));
+        }
+        if (found < 2) return true;
+        int minutes = now.get(java.util.Calendar.HOUR_OF_DAY) * 60
+                + now.get(java.util.Calendar.MINUTE);
+        return minutes >= bounds[0] && minutes <= bounds[1];
     }
 
     // ------------------------------------------------------------------
@@ -879,6 +1040,7 @@ final class Repo {
         funnel.put("completed", scalar(db, "SELECT COUNT(*) FROM bookings WHERE status='completed'", null));
         funnel.put("ratings", scalar(db, "SELECT COUNT(*) FROM ratings", null));
         funnel.put("insuranceChecks", scalar(db, "SELECT COUNT(*) FROM events WHERE name='insurance_check'", null));
+        funnel.put("consultRequests", scalar(db, "SELECT COUNT(*) FROM consult_requests", null));
         out.put("funnel", funnel);
         out.put("byDay", rows(db,
                 "SELECT date(ts/1000, 'unixepoch', 'localtime') AS day, COUNT(*) AS n"
@@ -892,7 +1054,7 @@ final class Repo {
     private JSONObject resetPatientData() throws JSONException {
         SQLiteDatabase db = helper.getWritableDatabase();
         String[] tables = {"profile", "bookings", "messages", "ratings",
-                "records", "claims", "events"};
+                "records", "claims", "events", "consult_requests"};
         db.beginTransaction();
         try {
             for (int i = 0; i < tables.length; i++) db.execSQL("DELETE FROM " + tables[i]);

@@ -16,7 +16,8 @@
     ratings: [],
     records: [],
     claims: [],
-    events: []
+    events: [],
+    consultRequests: []
   };
   window.__MEDNAV_CALLS = [];
 
@@ -184,6 +185,33 @@
     return out;
   }
 
+  function channelLabel(channel) {
+    if (channel === 'call') return 'a phone call';
+    if (channel === 'whatsapp') return 'WhatsApp';
+    if (channel === 'video') return 'a video consult';
+    return 'chat';
+  }
+
+  /** Same scoring as Repo.matchReply: specialty rules outrank generic ones. */
+  function reply(specialty, body) {
+    var lower = String(body).toLowerCase();
+    var best = null, bestScore = 0;
+    for (var r = 0; r < seed.CHAT_RULES.length; r++) {
+      var rule = seed.CHAT_RULES[r];
+      if (rule.specialty !== '*' && rule.specialty !== specialty) continue;
+      var score = 0;
+      var kws = String(rule.keywords).split(',');
+      for (var k = 0; k < kws.length; k++) {
+        var kw = kws[k].trim().toLowerCase();
+        if (kw.length > 1 && lower.indexOf(kw) >= 0) {
+          score += kw.length + (rule.specialty === '*' ? 0 : 6);
+        }
+      }
+      if (score > bestScore) { bestScore = score; best = rule.reply; }
+    }
+    return best || 'Thank you, noted.';
+  }
+
   var OPS = {
     bootstrap: function () {
       var cities = [], specialties = [];
@@ -343,6 +371,98 @@
 
     bookings: function () { return { ok: true, bookings: bookingsList() }; },
 
+    consult_team: function () {
+      var order = { primary: 1, associate: 2, coordinator: 3, insurance: 4 };
+      var team = seed.CONSULTANTS.slice().sort(function (a, b) {
+        return (order[a.role] || 9) - (order[b.role] || 9);
+      }).map(function (c) {
+        var copy = {};
+        for (var k in c) if (Object.prototype.hasOwnProperty.call(c, k)) copy[k] = c[k];
+        copy.helpsWithList = String(c.helps_with).split(',');
+        copy.languageList = String(c.languages).split(',');
+        copy.available = true;   // deterministic for the test run
+        copy.sample = true;
+        return copy;
+      });
+      return {
+        ok: true, team: team, topics: seed.CONSULT_TOPICS,
+        requests: OPS.consult_requests().requests
+      };
+    },
+
+    consult_request: function (a) {
+      var consultant = null;
+      for (var i = 0; i < seed.CONSULTANTS.length; i++) {
+        if (seed.CONSULTANTS[i].id === a.consultantId) consultant = seed.CONSULTANTS[i];
+      }
+      if (!consultant) {
+        for (var j = 0; j < seed.CONSULTANTS.length; j++) {
+          if (seed.CONSULTANTS[j].role === 'primary') consultant = seed.CONSULTANTS[j];
+        }
+      }
+      var id = 'cr_' + (Date.now() + db.consultRequests.length);
+      db.consultRequests.push({
+        id: id, consultant_id: consultant.id, channel: a.channel || 'chat',
+        topic: a.topic || '', note: a.note || '',
+        preferred_time: a.preferredTime || '',
+        status: (a.channel || 'chat') === 'chat' ? 'open' : 'requested',
+        created_ts: Date.now(), rated: 0
+      });
+      var first = String(db.profile.name || '').split(' ')[0];
+      if ((a.channel || 'chat') === 'chat') {
+        db.messages.push({ id: db.messages.length + 1, booking_id: id, sender: 'doctor',
+          body: 'Namaskar' + (first ? ' ' + first : '') + ', I am ' + consultant.name
+            + ', ' + consultant.title + '. ' + consultant.sla + '.', ts: Date.now() });
+        if (a.note) {
+          db.messages.push({ id: db.messages.length + 1, booking_id: id,
+            sender: 'patient', body: a.note, ts: Date.now() });
+          db.messages.push({ id: db.messages.length + 1, booking_id: id,
+            sender: 'doctor', body: reply(consultant.specialty, a.note), ts: Date.now() });
+        }
+      } else {
+        db.messages.push({ id: db.messages.length + 1, booking_id: id, sender: 'doctor',
+          body: 'Request received. ' + consultant.name + ' will reach you on '
+            + channelLabel(a.channel) + '.', ts: Date.now() });
+      }
+      db.events.push({ name: 'consult_request', props: a.channel || 'chat', ts: Date.now() });
+      return { ok: true, requestId: id, consultant: consultant,
+        channel: a.channel || 'chat', requests: OPS.consult_requests().requests };
+    },
+
+    consult_requests: function () {
+      var out = [];
+      for (var i = db.consultRequests.length - 1; i >= 0; i--) {
+        var r = db.consultRequests[i];
+        var c = null;
+        for (var j = 0; j < seed.CONSULTANTS.length; j++) {
+          if (seed.CONSULTANTS[j].id === r.consultant_id) c = seed.CONSULTANTS[j];
+        }
+        var count = 0;
+        for (var m = 0; m < db.messages.length; m++) {
+          if (db.messages[m].booking_id === r.id) count++;
+        }
+        var row = {};
+        for (var k in r) if (Object.prototype.hasOwnProperty.call(r, k)) row[k] = r[k];
+        row.consultant_name = c ? c.name : '';
+        row.consultant_title = c ? c.title : '';
+        row.consultant_role = c ? c.role : '';
+        row.specialty = c ? c.specialty : '';
+        row.sla = c ? c.sla : '';
+        row.hours = c ? c.hours : '';
+        row.messageCount = count;
+        row.channelLabel = channelLabel(r.channel);
+        out.push(row);
+      }
+      return { ok: true, requests: out };
+    },
+
+    update_consult_request: function (a) {
+      for (var i = 0; i < db.consultRequests.length; i++) {
+        if (db.consultRequests[i].id === a.id) db.consultRequests[i].status = a.status;
+      }
+      return OPS.consult_requests();
+    },
+
     update_booking: function (a) {
       for (var i = 0; i < db.bookings.length; i++) {
         if (db.bookings[i].id === a.id) db.bookings[i].status = a.status;
@@ -368,23 +488,18 @@
           if (d) specialty = d.specialty;
         }
       }
-      var lower = String(a.body).toLowerCase();
-      var best = null, bestScore = 0;
-      for (var r = 0; r < seed.CHAT_RULES.length; r++) {
-        var rule = seed.CHAT_RULES[r];
-        if (rule.specialty !== '*' && rule.specialty !== specialty) continue;
-        var score = 0;
-        var kws = String(rule.keywords).split(',');
-        for (var k = 0; k < kws.length; k++) {
-          var kw = kws[k].trim().toLowerCase();
-          if (kw.length > 1 && lower.indexOf(kw) >= 0) {
-            score += kw.length + (rule.specialty === '*' ? 0 : 6);
+      if (!specialty) {
+        for (var q = 0; q < db.consultRequests.length; q++) {
+          if (db.consultRequests[q].id !== a.bookingId) continue;
+          for (var c2 = 0; c2 < seed.CONSULTANTS.length; c2++) {
+            if (seed.CONSULTANTS[c2].id === db.consultRequests[q].consultant_id) {
+              specialty = seed.CONSULTANTS[c2].specialty;
+            }
           }
         }
-        if (score > bestScore) { bestScore = score; best = rule.reply; }
       }
       db.messages.push({ id: db.messages.length + 1, booking_id: a.bookingId,
-        sender: 'doctor', body: best || 'Thank you, noted.', ts: Date.now() });
+        sender: 'doctor', body: reply(specialty, a.body), ts: Date.now() });
       return OPS.messages(a);
     },
 
@@ -505,7 +620,8 @@
           searches: count('search'), doctorViews: count('doctor_view'),
           bookings: db.bookings.length, teleMessages: patientMsgs,
           completed: completed, ratings: db.ratings.length,
-          insuranceChecks: count('insurance_check')
+          insuranceChecks: count('insurance_check'),
+          consultRequests: db.consultRequests.length
         },
         byDay: [{ day: new Date().toISOString().slice(0, 10), n: db.events.length }],
         recent: db.events.slice(-30).reverse(),
@@ -515,7 +631,7 @@
 
     reset_data: function () {
       db.profile = {}; db.bookings = []; db.messages = []; db.ratings = [];
-      db.records = []; db.claims = []; db.events = [];
+      db.records = []; db.claims = []; db.events = []; db.consultRequests = [];
       return { ok: true };
     }
   };

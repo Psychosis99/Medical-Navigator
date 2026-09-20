@@ -65,6 +65,10 @@ var Store = (function () {
 
     isOnboarded: function () {
       return String((state.profile || {}).onboarded || '') === '1';
+    },
+
+    hasSeenGuide: function () {
+      return String((state.profile || {}).guide_seen || '') === '1';
     }
   };
 }());
@@ -180,6 +184,7 @@ var Router = (function () {
     tabs.style.display = 'flex';
     var items = [
       { id: 'home', icon: '⌂', label: I18n.t('nav_home') },
+      { id: 'consult', icon: '⚕', label: I18n.t('nav_consult') },
       { id: 'find', icon: '⌕', label: I18n.t('nav_find') },
       { id: 'cost', icon: '₹', label: I18n.t('nav_cost') },
       { id: 'insurance', icon: '⛨', label: I18n.t('nav_insurance') },
@@ -270,8 +275,14 @@ var Chrome = {
     if (Store.profile().lang) I18n.set(Store.profile().lang);
 
     Native.track('app_open', 'lang=' + I18n.get());
-    if (Store.isOnboarded()) Router.tab('home');
-    else Router.go('onboarding', {});
+    if (!Store.isOnboarded()) {
+      Router.go('onboarding', {});
+    } else if (!Store.hasSeenGuide()) {
+      // Upgrading from a build without the guide: show it once.
+      Router.go('guide', { page: 0, firstRun: true });
+    } else {
+      Router.tab('home');
+    }
     hideSplash();
   }
 

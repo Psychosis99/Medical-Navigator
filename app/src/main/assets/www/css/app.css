@@ -81,9 +81,13 @@ a { color: var(--teal-700); }
   z-index: 10;
 }
 .tab {
-  flex: 1 1 0; border: 0; background: none; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 2px;
-  color: var(--ink-500); font-size: 11px; padding: 6px 2px; cursor: pointer;
+  flex: 1 1 0; min-width: 0; border: 0; background: none; display: flex;
+  flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  color: var(--ink-500); font-size: 10.5px; padding: 6px 1px; cursor: pointer;
+  overflow: hidden;
+}
+.tab > span:last-child {
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .tab .tab-icon { font-size: 19px; line-height: 1; }
 .tab.active { color: var(--teal-700); font-weight: 600; }
@@ -337,3 +341,69 @@ textarea.input { min-height: 90px; resize: vertical; }
 
 /* A full-bleed screen (the chat) owns its own padding. */
 .view.full { padding: 0 !important; }
+
+/* ---------- care team (the primary feature) ---------- */
+.hero.consult { background: linear-gradient(155deg, #12766d, #07332f); }
+.hero-row { display: flex; align-items: center; gap: 12px; }
+.hero-row h1 { font-size: 17px; }
+.hero-row p { font-size: 12.5px; opacity: .9; }
+.hero .btn { margin-top: 12px; }
+
+.avatar.lead {
+  width: 52px; height: 52px; font-size: 17px;
+  background: rgba(255, 255, 255, .16); color: #fff;
+  border-color: rgba(255, 255, 255, .35);
+}
+
+.btn.onbrand { background: #fff; color: var(--teal-900); }
+.btn.onbrand:active { background: #e8f6f4; }
+.btn.onbrand-ghost {
+  background: rgba(255, 255, 255, .14); color: #fff;
+  border: 1px solid rgba(255, 255, 255, .32);
+}
+.btn.onbrand-ghost:active { background: rgba(255, 255, 255, .26); }
+
+.consult-hero {
+  background: linear-gradient(155deg, var(--teal-600), var(--teal-900));
+  color: #fff; border-radius: 16px; padding: 16px; margin-bottom: 12px;
+}
+.consult-hero-top { display: flex; align-items: center; gap: 12px; }
+.consult-name { font-size: 18px; font-weight: 650; }
+.consult-role { font-size: 12.5px; opacity: .9; }
+.consult-qual { font-size: 11.5px; opacity: .75; margin-top: 1px; }
+.consult-lead { font-size: 13.5px; opacity: .95; margin: 12px 0 10px; }
+.consult-status {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  font-size: 12px; opacity: .9; margin-bottom: 12px;
+}
+/* Full-width so it starts on its own line instead of orphaning a separator. */
+.consult-sla { flex: 1 0 100%; opacity: .8; }
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255, 255, 255, .45); display: inline-block;
+}
+.dot.on { background: #4ade80; box-shadow: 0 0 0 3px rgba(74, 222, 128, .25); }
+
+/* ---------- welcome guide ---------- */
+.guide-card {
+  background: var(--card); border-radius: 16px; padding: 26px 20px;
+  box-shadow: var(--shadow); margin-bottom: 14px; text-align: center;
+  min-height: 46vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
+}
+.guide-card.primary {
+  background: linear-gradient(155deg, var(--teal-600), var(--teal-900)); color: #fff;
+}
+.guide-icon {
+  font-size: 30px; width: 64px; height: 64px; border-radius: 20px;
+  background: var(--teal-050); color: var(--teal-700);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 4px;
+}
+.guide-card.primary .guide-icon { background: rgba(255, 255, 255, .16); color: #fff; }
+.guide-title { font-size: 21px; line-height: 1.25; }
+.guide-body { font-size: 14.5px; line-height: 1.55; color: var(--ink-700); margin: 0; }
+.guide-card.primary .guide-body { color: rgba(255, 255, 255, .92); }
+.guide-flag {
+  margin-top: 6px; font-size: 12px; font-weight: 650; padding: 5px 12px;
+  border-radius: 999px; background: rgba(255, 255, 255, .18);
+}

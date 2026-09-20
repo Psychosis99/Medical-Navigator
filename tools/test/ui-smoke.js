@@ -72,6 +72,12 @@ async function main() {
     await page.getByRole('button', { name: label }).first().click({ timeout: 4000 });
     await page.waitForTimeout(150);
   };
+  /** Same, but scoped to the open bottom sheet, whose labels repeat the screen's. */
+  const tapSheetButton = async (label) => {
+    await page.locator('.sheet').getByRole('button', { name: label })
+      .first().click({ timeout: 4000 });
+    await page.waitForTimeout(200);
+  };
   const body = () => page.textContent('body');
 
   console.log('\nLoading the packaged UI over file:// ...');
@@ -127,21 +133,100 @@ async function main() {
   await shot('04-onboarding-profile');
   await tapButton('Save');
   await page.waitForTimeout(300);
-  check('landed on home after onboarding', (await body()).includes('Namaskar, Sunita'));
+
+  // ---- welcome guide (shown once, straight after sign-up) ----
+  console.log('\nWelcome guide');
+  let text = await body();
+  check('welcome guide appears after sign-up', text.includes('A guide, not a hospital'));
+  check('guide says it does not diagnose', text.includes('does not diagnose'));
+  await shot('05-guide-1');
+  await tapButton('Next');
+  text = await body();
+  check('guide page 2 leads with the consultant',
+    text.includes('Start with our consultant'));
+  check('guide states the first consult is free', text.includes('First consult free'));
+  await shot('06-guide-consultant');
+  for (var g = 0; g < 4; g++) await tapButton('Next');
+  text = await body();
+  check('guide ends on the data page', text.includes('Your data stays here'));
+  check('guide has a finishing action', text.includes('Start using the app'));
+  await tapButton('Start using the app');
+  await page.waitForTimeout(300);
+  check('guide hands over to the care team',
+    (await body()).includes('Dr. Ipsita Sengupta'));
+  check('guide is not shown again',
+    (await page.evaluate(() => Store.hasSeenGuide())) === true);
+
+  // ---- the care team: the app's primary feature ----
+  console.log('\nCare team');
+  text = await body();
+  check('primary consultant named', text.includes('Lead Consultant'));
+  check('availability shown', text.includes('Available now') || text.includes('Away right now'));
+  check('consult topics offered', text.includes('Which doctor should I see?'));
+  check('wider care team listed',
+    text.includes('Rina Tamang') && text.includes('Sourav Mitra'));
+  await shot('07-consult-hub');
+
+  await tapButton('Which doctor should I see?');
+  await page.waitForTimeout(200);
+  await page.locator('.sheet textarea.input')
+    .fill('sugar is high and I do not know which doctor to see');
+  await shot('08-consult-request');
+  await tapSheetButton('Start a chat');
+  await page.waitForTimeout(350);
+  text = await body();
+  check('consult thread opens with the consultant greeting',
+    text.includes('I am Dr. Ipsita Sengupta'));
+  check('the patient note is carried into the thread',
+    text.includes('which doctor to see'));
+  check('consultant answers the routing question',
+    text.includes('start with a physician'));
+  await page.fill('.composer input.input', 'is this test needed, they advised 6 tests');
+  await tapButton('Send');
+  await page.waitForTimeout(250);
+  check('follow-up gets a care-team reply',
+    (await body()).includes('which ones change the treatment'));
+  await shot('09-consult-chat');
+
+  await page.evaluate(() => Router.tab('consult'));
+  await page.waitForTimeout(250);
+  check('the open consultation is listed', (await body()).includes('Open conversation'));
+
+  // a callback request goes through the non-chat path
+  await tapButton('Request a call back');
+  await page.waitForTimeout(200);
+  await page.locator('.sheet textarea.input').fill('please call about my mother');
+  await tapSheetButton('Send request');
+  await page.waitForTimeout(300);
+  text = await body();
+  check('callback confirmation shown', text.includes('will reach you'));
+  check('callback is honest that no call is placed',
+    text.includes('no call is actually placed'));
+  await shot('10-consult-callback');
+  await tapSheetButton('Done');
+  await page.waitForTimeout(250);
+  check('callback request recorded',
+    (await page.evaluate(() => Native.call('consult_requests', {}).requests.length)) === 2);
+
+  await page.evaluate(() => Router.tab('home'));
+  await page.waitForTimeout(300);
+  text = await body();
+  check('home leads with the care team', text.includes('Talk to our consultant'));
+  check('landed on home after onboarding', text.includes('Namaskar, Sunita'));
   check('profile persisted to the bridge',
     (await page.evaluate(() => Store.profile().city)) === 'Siliguri');
-  await shot('05-home');
+  await shot('11-home');
 
   // ---- triage -> search -> doctor (the blueprint's Siliguri diabetes journey) ----
   console.log('\nTriage and search');
   await page.fill('.card input.input', 'sugar high and always thirsty');
   await tapButton('Check');
   await page.waitForTimeout(200);
-  let text = await body();
+  text = await body();
   check('triage matched diabetes', text.includes('High blood sugar / diabetes'));
   check('triage routed to Endocrinology', text.includes('Endocrinology'));
   check('triage shows a red-flag warning', text.includes('emergency room'));
-  await shot('06-triage');
+  await shot('12-triage');
 
   await page.getByText('Find a doctor').last().click();
   await page.waitForTimeout(250);
@@ -150,13 +235,13 @@ async function main() {
   check('search shows the district hospital low-cost option', text.includes('Dr. Meenakshi Rai'));
   check('fee bands rendered', /₹\d/.test(text));
   check('cashless badge shown for the insurer', text.includes('Cashless possible'));
-  await shot('07-search-results');
+  await shot('13-search-results');
 
   // filters
   await tapButton('Filters');
   await page.waitForTimeout(150);
   await page.selectOption('.sheet select.input >> nth=2', { label: 'Under ₹700' });
-  await shot('08-filters');
+  await shot('14-filters');
   await tapButton('Apply');
   await page.waitForTimeout(250);
   text = await body();
@@ -174,7 +259,7 @@ async function main() {
   check('doctor detail lists commonly advised tests', text.includes('HbA1c'));
   check('doctor detail shows the insurance note',
     text.includes('Cashless possible') || text.includes('reimbursement'));
-  await shot('09-doctor-detail');
+  await shot('15-doctor-detail');
 
   // ---- booking + teleconsult chat ----
   console.log('\nBooking and teleconsult');
@@ -183,7 +268,7 @@ async function main() {
   check('booking screen shows the free-minutes rule',
     (await body()).includes('First 10 minutes free'));
   await page.locator('textarea.input').fill('Sugar high for 2 weeks, taking metformin');
-  await shot('10-booking');
+  await shot('16-booking');
   await tapButton('Confirm booking');
   await page.waitForTimeout(350);
   text = await body();
@@ -199,7 +284,7 @@ async function main() {
   check('patient message stored', text.includes('my hba1c is 8.4'));
   check('specialty-specific canned reply returned',
     text.includes('HbA1c') || text.includes('urine microalbumin'));
-  await shot('11-chat');
+  await shot('17-doctor-chat');
 
   // ---- cost estimate ----
   console.log('\nCost estimate');
@@ -210,7 +295,7 @@ async function main() {
   check('cost screen compares partner labs', text.includes('Cheapest partner lab'));
   check('cost table lists a lab name', text.includes('Himalayan Mission Lab'));
   check('savings line shown', text.includes('You could save'));
-  await shot('12-cost-estimate');
+  await shot('18-cost-estimate');
 
   await tapButton('Select tests');
   await page.waitForTimeout(150);
@@ -226,7 +311,7 @@ async function main() {
   text = await body();
   check('insurance hub names the chosen cover', text.includes('Sanjeevani Health Insurance'));
   check('pre-admission steps listed', text.includes('pre-authorisation'));
-  await shot('13-insurance-hub');
+  await shot('19-insurance-hub');
 
   await tapButton('Check insurance coverage');
   await page.waitForTimeout(250);
@@ -237,7 +322,7 @@ async function main() {
   check('network hospital detected as cashless', text.includes('Cashless possible'));
   check('what-to-carry checklist rendered', text.includes('Insurance card or policy number'));
   check('policy clauses rendered', text.includes('In-patient hospitalisation'));
-  await shot('14-insurance-check');
+  await shot('20-insurance-check');
 
   await page.selectOption('select.input >> nth=1',
     { label: 'Himalayan Mission Trust Hospital · Siliguri' });
@@ -245,7 +330,7 @@ async function main() {
   text = await body();
   check('non-network hospital flagged', text.includes('Not in your network'));
   check('cashless alternatives offered', text.includes('Cashless alternatives'));
-  await shot('15-insurance-not-network');
+  await shot('21-insurance-not-network');
 
   await page.evaluate(() => Router.go('policy', {}));
   await page.waitForTimeout(250);
@@ -253,7 +338,7 @@ async function main() {
   check('policy reader groups clauses', text.includes('Not covered') && text.includes('Covered'));
   check('policy reader is honest about parsing',
     text.includes('pre-parsed sample clauses'));
-  await shot('16-policy');
+  await shot('22-policy');
 
   // ---- bookings, rating, records, metrics ----
   console.log('\nVisits, rating, records and metrics');
@@ -266,7 +351,7 @@ async function main() {
   await page.locator('.star.tappable').nth(3).click();      // 4 stars for the doctor
   await page.locator('.star.tappable').nth(9).click();      // 5 stars for the hospital
   await page.waitForTimeout(150);
-  await shot('17-rating');
+  await shot('23-rating');
   await tapButton('Submit rating');
   await page.waitForTimeout(300);
   check('rating recorded on the booking',
@@ -281,21 +366,22 @@ async function main() {
   await tapButton('Save');
   await page.waitForTimeout(250);
   check('record saved and listed', (await body()).includes('Fasting sugar 142'));
-  await shot('18-records');
+  await shot('24-records');
 
   await page.evaluate(() => Router.go('metrics', {}));
   await page.waitForTimeout(250);
   text = await body();
   check('metrics funnel rendered', text.includes('Search → booking'));
   check('metrics counted the search', /Searches/.test(text));
-  await shot('19-metrics');
+  check('metrics count consult requests', text.includes('Consult requests'));
+  await shot('25-metrics');
 
   await page.evaluate(() => Router.go('about', {}));
   await page.waitForTimeout(200);
   text = await body();
   check('about screen states the limitations', text.includes('fictional sample data'));
   check('about screen shows the version', text.includes('1.0.0-test'));
-  await shot('20-about');
+  await shot('26-about');
 
   // ---- emergency + device hand-offs ----
   console.log('\nEmergency and device hand-offs');
@@ -308,14 +394,17 @@ async function main() {
   await page.getByRole('button', { name: /Call now/ }).first().click();
   check('dial handed to the native layer',
     (await page.evaluate(() => window.__MEDNAV_DIAL)) === '108');
-  await shot('21-emergency');
+  await shot('27-emergency');
 
   await page.evaluate(() => Router.tab('me'));
   await page.waitForTimeout(250);
+  text = await body();
+  check('Me tab links to past consultations', text.includes('My consultations'));
+  check('Me tab can re-open the guide', text.includes('How this app works'));
   await page.getByRole('button', { name: /Share this app/ }).first().click();
   check('share handed to the native layer',
     String(await page.evaluate(() => window.__MEDNAV_SHARE || '')).includes('Medical Navigator'));
-  await shot('22-me');
+  await shot('28-me');
 
   // ---- back-button contract used by MainActivity ----
   await page.evaluate(() => Router.go('about', {}));
@@ -331,7 +420,7 @@ async function main() {
   await page.evaluate(() => { I18n.set('bn'); Router.render(); });
   await page.waitForTimeout(250);
   check('Bengali chrome applied', (await body()).includes('চিকিৎসা খুঁজুন'));
-  await shot('23-bengali-home');
+  await shot('29-bengali-home');
   await page.evaluate(() => { I18n.set('en'); Router.render(); });
 
   check('no console or page errors', consoleErrors.length === 0,

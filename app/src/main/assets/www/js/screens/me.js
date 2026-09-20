@@ -27,11 +27,13 @@
       ]));
 
       var items = [
+        { icon: '⚕', label: I18n.t('my_consults'), screen: 'consult_history' },
         { icon: '☑', label: I18n.t('my_visits'), screen: 'bookings' },
         { icon: '☷', label: I18n.t('records'), screen: 'records' },
         { icon: '✉', label: 'Claim tracker', screen: 'claims' },
         { icon: '⛨', label: I18n.t('insurance_help'), tab: 'insurance' },
         { icon: '◷', label: I18n.t('pilot_metrics'), screen: 'metrics' },
+        { icon: '◷', label: I18n.t('guide_title'), screen: 'guide' },
         { icon: 'ℹ', label: I18n.t('about'), screen: 'about' }
       ];
       var list = el('div');
@@ -321,6 +323,7 @@
       grid.appendChild(metric(f.teleMessages, 'Chat messages'));
       grid.appendChild(metric(f.completed, 'Visits completed'));
       grid.appendChild(metric(f.ratings, 'Ratings given'));
+      grid.appendChild(metric(f.consultRequests, 'Consult requests'));
       view.appendChild(UI.section('Funnel', grid));
 
       var steps = [

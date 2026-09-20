@@ -218,7 +218,8 @@
         });
         Native.track('onboarding_complete', 'city=' + citySelect.value);
         UI.snack('Welcome, ' + String(nameInput.value).trim().split(' ')[0]);
-        Router.tab('home');
+        // Explain the app before dropping them into it.
+        Router.go('guide', { page: 0, firstRun: true }, { reset: true });
       }
     }));
   }
@@ -241,15 +242,34 @@
     render: function (params, view) {
       view.appendChild(Chrome.demoBanner());
 
-      view.appendChild(el('div.hero', null, [
-        el('h1', { text: I18n.t('what_troubles_you') }),
-        el('p', { text: I18n.t('tagline') }),
-        el('div.hero-pills', null, [
-          el('span.hero-pill', { text: Store.state.specialties.length + ' specialties' }),
-          el('span.hero-pill', { text: Store.state.cities.length + ' cities' }),
-          el('span.hero-pill', { text: 'Works offline' })
-        ])
-      ]));
+      // The care team sits above everything else: if a patient is unsure what
+      // they need, asking a person beats every filter in this app.
+      var team = Native.call('consult_team', {});
+      if (team.ok && team.team.length) {
+        var lead = team.team[0];
+        for (var t = 0; t < team.team.length; t++) {
+          if (team.team[t].role === 'primary') lead = team.team[t];
+        }
+        view.appendChild(el('div.hero.consult', null, [
+          el('div.hero-row', null, [
+            el('div.avatar.lead', { text: UI.initials(lead.name) }),
+            el('div.row-left', null, [
+              el('h1', { text: I18n.t('consult_title') }),
+              el('p', { text: lead.name + ' \u00B7 ' + lead.title })
+            ])
+          ]),
+          el('p', { style: 'margin-top:8px', text: I18n.t('consult_lead') }),
+          el('div.hero-pills', null, [
+            el('span.hero-pill', { text: lead.available
+              ? '\u25CF ' + I18n.t('available_now') : I18n.t('away_now') }),
+            el('span.hero-pill', { text: I18n.t('first_consult_free') })
+          ]),
+          UI.button(I18n.t('start_chat'), {
+            block: true, variant: 'onbrand',
+            onclick: function () { Router.tab('consult'); }
+          })
+        ]));
+      }
 
       var symptomInput = UI.input({
         placeholder: I18n.t('symptom_hint'),
@@ -266,13 +286,19 @@
         }
         Router.go('triage', { text: text });
       }
-      view.appendChild(UI.card([
+      view.appendChild(UI.section(I18n.t('what_troubles_you'), UI.card([
+        el('p.small.muted', { style: 'margin:0 0 10px', text: I18n.t('tagline') }),
         symptomInput,
-        UI.button(I18n.t('check'), { block: true, onclick: runTriage })
-      ]));
+        UI.button(I18n.t('check'), { block: true, onclick: runTriage }),
+        el('div.wrap', { style: 'margin-top:10px' }, [
+          UI.badge(Store.state.specialties.length + ' specialties', 'flat'),
+          UI.badge(Store.state.cities.length + ' cities', 'flat'),
+          UI.badge('Works offline', 'flat')
+        ])
+      ])));
 
       var actions = el('div.action-grid');
-      actions.appendChild(action('⚕', I18n.t('find_doctor'),
+      actions.appendChild(action('⌕', I18n.t('find_doctor'),
         'Filter by fee, insurance, distance', function () { Router.tab('find'); }));
       actions.appendChild(action('₹', I18n.t('cost_estimate'),
         'OPD + tests, before you go', function () { Router.tab('cost'); }));

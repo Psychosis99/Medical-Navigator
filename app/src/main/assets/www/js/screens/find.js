@@ -669,7 +669,7 @@
   // Teleconsult chat
   // ------------------------------------------------------------------
   Screens.chat = {
-    title: function () { return I18n.t('chat_with_doctor'); },
+    title: function (p) { return p.title || I18n.t('chat_with_doctor'); },
     tab: null,
     fullBleed: true,
     render: function (params, view) {
