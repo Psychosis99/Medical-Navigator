@@ -182,17 +182,18 @@ final class SeedData {
      * primary promise: someone answerable who tells you which specialist you
      * actually need before you spend anything.
      *
-     * One consultant for now. The role column stays because the request flow
-     * routes by role, so adding an associate or an insurance desk later is a
-     * seed change rather than a code change.
+     * The consultant is identified by role, not by a personal name: patients
+     * reach the desk, and whoever is on duty answers. The role column stays
+     * because the request flow routes by role, so adding an associate or an
+     * insurance desk later is a seed change rather than a code change.
      *
      * id|name|role|title|qualification|specialty|exp_years|languages|hours|sla|
-     * fee_note|rating|rating_count|helps_with|bio
+     * fee_note|rating|rating_count|helps_with|bio|email
      *
      * role: primary | associate | coordinator | insurance
      */
     static final String[] CONSULTANTS = {
-        "cn_lead|Dr. Sashanka Dey|primary|Lead Consultant, Care Team|MBBS, MD (General Medicine)|General Medicine|16|Bengali,Hindi,English|Mon-Sat, 8:00 AM - 9:00 PM|Replies within 30 minutes in working hours|First consult free. Follow-ups Rs 199.|4.7|1268|Which specialist you need,Second opinion on a prescription,Understanding a test report,Whether a test is really necessary,Which hospital to choose,Booking an appointment or lab test,Insurance and claim questions|Your first point of contact. Sixteen years in general medicine and family practice across North Bengal, with a habit of asking what a test will change before ordering it."
+        "cn_lead|Our Lead Consultant|primary|Medical Navigator Care Desk|MBBS, MD (General Medicine)|General Medicine|16|Bengali,Hindi,English|Mon-Sat, 8:00 AM - 9:00 PM|Replies within 30 minutes in working hours|First consult free. Follow-ups Rs 199.|4.7|1268|Which specialist you need,Second opinion on a prescription,Understanding a test report,Whether a test is really necessary,Which hospital to choose,Booking an appointment or lab test,Insurance and claim questions|Your first point of contact: a general physician with sixteen years in family practice across North Bengal, and a habit of asking what a test will change before ordering it.|do3rs.and.th1nkers@gmail.com"
     };
 
     /** Why a patient reaches out. id|label|consultant_role|hint */

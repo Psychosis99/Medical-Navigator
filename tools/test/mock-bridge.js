@@ -186,10 +186,7 @@
   }
 
   function channelLabel(channel) {
-    if (channel === 'call') return 'a phone call';
-    if (channel === 'whatsapp') return 'WhatsApp';
-    if (channel === 'video') return 'a video consult';
-    return 'chat';
+    return channel === 'email' ? 'email' : 'chat';
   }
 
   /** Same scoring as Repo.matchReply: specialty rules outrank generic ones. */
@@ -411,8 +408,8 @@
       var first = String(db.profile.name || '').split(' ')[0];
       if ((a.channel || 'chat') === 'chat') {
         db.messages.push({ id: db.messages.length + 1, booking_id: id, sender: 'doctor',
-          body: 'Namaskar' + (first ? ' ' + first : '') + ', I am ' + consultant.name
-            + ', ' + consultant.title + '. ' + consultant.sla + '.', ts: Date.now() });
+          body: 'Namaskar' + (first ? ' ' + first : '') + ', you are through to the '
+            + consultant.title + '. ' + consultant.sla + '.', ts: Date.now() });
         if (a.note) {
           db.messages.push({ id: db.messages.length + 1, booking_id: id,
             sender: 'patient', body: a.note, ts: Date.now() });
@@ -421,8 +418,8 @@
         }
       } else {
         db.messages.push({ id: db.messages.length + 1, booking_id: id, sender: 'doctor',
-          body: 'Request received. ' + consultant.name + ' will reach you on '
-            + channelLabel(a.channel) + '.', ts: Date.now() });
+          body: 'Request noted. The consultant will reply by '
+            + channelLabel(a.channel) + ' to ' + consultant.email + '.', ts: Date.now() });
       }
       db.events.push({ name: 'consult_request', props: a.channel || 'chat', ts: Date.now() });
       return { ok: true, requestId: id, consultant: consultant,
@@ -651,6 +648,9 @@
     share: function (t) { window.__MEDNAV_SHARE = t; },
     dial: function (n) { window.__MEDNAV_DIAL = n; },
     copy: function () {},
+    email: function (to, subject, body) {
+      window.__MEDNAV_EMAIL = { to: to, subject: subject, body: body };
+    },
     toast: function (m) { window.__MEDNAV_TOAST = m; },
     vibrate: function () {},
     appInfo: function () {

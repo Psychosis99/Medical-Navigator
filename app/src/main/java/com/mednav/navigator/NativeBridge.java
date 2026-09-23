@@ -91,6 +91,32 @@ final class NativeBridge {
         });
     }
 
+    /**
+     * Opens the phone's mail app on a pre-filled draft. ACTION_SENDTO with a
+     * mailto: URI, so only mail apps can claim it - no generic intent launching.
+     */
+    @JavascriptInterface
+    public void email(final String to, final String subject, final String body) {
+        activity.runOnUiThread(new Runnable() {
+            @Override public void run() {
+                Uri uri = Uri.parse("mailto:" + Uri.encode(to == null ? "" : to)
+                        + "?subject=" + Uri.encode(subject == null ? "" : subject)
+                        + "&body=" + Uri.encode(body == null ? "" : body));
+                Intent send = new Intent(Intent.ACTION_SENDTO, uri);
+                try {
+                    activity.startActivity(Intent.createChooser(send, "Send email"));
+                } catch (ActivityNotFoundException e) {
+                    toastNow("No email app found. Address copied instead.");
+                    ClipboardManager cm = (ClipboardManager)
+                            activity.getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (cm != null) {
+                        cm.setPrimaryClip(ClipData.newPlainText("Medical Navigator", to));
+                    }
+                }
+            }
+        });
+    }
+
     @JavascriptInterface
     public void copy(final String text) {
         activity.runOnUiThread(new Runnable() {

@@ -150,7 +150,9 @@ var Router = (function () {
         onclick: function () { back(); }
       }));
     } else {
-      bar.appendChild(UI.el('span.icon-btn', { text: '✚', 'aria-hidden': 'true' }));
+      bar.appendChild(UI.el('img.brand-mark', {
+        src: 'img/logo.jpg', alt: I18n.t('company')
+      }));
     }
 
     var title = typeof screen.title === 'function'

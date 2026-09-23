@@ -7,10 +7,13 @@
         <item name="android:windowBackground">@color/surface</item>
         <item name="android:statusBarColor">@color/brand_teal_dark</item>
         <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
     <!-- Shown for the few hundred ms before the WebView paints its first frame. -->
     <style name="AppTheme.Launch" parent="@style/AppTheme">
         <item name="android:windowBackground">@drawable/launch_screen</item>
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

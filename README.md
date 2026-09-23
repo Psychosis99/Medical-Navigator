@@ -1,5 +1,10 @@
 # Medical Navigator — Android MVP
 
+<p align="center">
+  <img src="docs/screenshots/logo.jpg" width="150" alt="Doers and Thinkers" /><br />
+  <em>An initiative of Doers and Thinkers Pvt. Ltd.</em>
+</p>
+
 **Talk to a doctor first. Then find the right care, at a price you knew in
 advance, with your insurance actually working.**
 
@@ -15,7 +20,7 @@ leave the house:
 
 | The question | What happens today | In the app |
 |---|---|---|
-| **Which kind of doctor do I even need?** | People start at the wrong specialist, or at whoever a neighbour recommends, and lose weeks and consultation fees finding out | Ask our consultant — first consult free |
+| **Which kind of doctor do I even need?** | People start at the wrong specialist, or at whoever a neighbour recommends, and lose weeks and consultation fees finding out | Message our consultant — first consult free |
 | **What will this actually cost me?** | The OPD fee is the small part. The tests that follow are the real bill, and nobody quotes them up front | Consultation + tests, priced at the cheapest partner lab |
 | **Will my insurance work at this hospital?** | Cashless depends on the *hospital* being empanelled, not just on holding a policy. Patients discover this at the admission desk | A yes/no per hospital, plus the pre-auth steps |
 | **Who is worth trusting?** | Ratings, fees and credentials live in scattered places, if anywhere | Ratings from patients who went, folded into the ranking |
@@ -24,8 +29,8 @@ Medical Navigator collapses those four into one flow. It does **not** diagnose,
 prescribe, or replace a doctor. It does the navigation — the part that currently
 costs patients money and time purely through lack of information.
 
-**Download:** [`dist/MedicalNavigator-v1.1.1.apk`](dist/MedicalNavigator-v1.1.1.apk)
-— ~96 KB, Android 7.0+ (API 24), installable and shareable over WhatsApp.
+**Download:** [`dist/MedicalNavigator-v1.2.0.apk`](dist/MedicalNavigator-v1.2.0.apk)
+— ~140 KB, Android 7.0+ (API 24), installable and shareable over WhatsApp.
 
 > **This is a pilot/demo build.** Every doctor, hospital, lab, insurer and policy
 > clause in it is **fictional sample data**, clearly labelled as such inside the
@@ -45,13 +50,19 @@ will not do — it is a guide, not a hospital, and it does not diagnose. From th
 on every screen is filtered to *them*.
 
 The guide hands them to the **consultant**, which is where the app wants every
-journey to start. Dr. Sashanka Dey, the lead consultant, is one tap away by chat,
-callback or WhatsApp, with availability and a stated response time on screen. A
-patient who does not know where to begin can simply ask a person: *which doctor
-should I see, is this test really needed, what does this report mean, which
-hospital should I go to.* The first consult is free, and topic chips let them
-name the question — including booking help and insurance queries — so the
-consultant has context before the conversation starts.
+journey to start. Our lead consultant is one tap away, by in-app message or by
+email, with availability and a stated response time on screen. A patient who
+does not know where to begin can simply ask: *which doctor should I see, is this
+test really needed, what does this report mean, which hospital should I go to.*
+The first consult is free, and topic chips let them name the question —
+including booking help and insurance queries — so the consultant has context
+before the conversation starts.
+
+The consultant is presented **by role, not by name**. Patients reach the
+Medical Navigator care desk and whoever is on duty answers; no individual
+clinician is named anywhere in the app. The only two channels are the in-app
+thread and `do3rs.and.th1nkers@gmail.com`, which the email button opens as a
+pre-filled draft carrying the patient's topic, note, city and age.
 
 If they would rather look for themselves, they describe the problem in their own words — "sugar high, always thirsty" —
 and the app names the specialty they need and flags the symptoms that mean
@@ -84,7 +95,7 @@ device only; pooling ratings across patients needs the Phase-II backend.
 
 | Area | In this build |
 |---|---|
-| **Consultant** *(primary)* | A named in-house consultant — Dr. Sashanka Dey, Lead Consultant — reachable by chat, callback, WhatsApp or video, with live availability, a stated response time and a free first consult. Nine topic chips give him context before the conversation starts. Threads are kept under *My consultations* |
+| **Consultant** *(primary)* | The in-house consultant, reachable two ways: **in-app message** or **email** (`do3rs.and.th1nkers@gmail.com`). Identified by role, never by a personal name. Shows live availability, a stated response time, credentials and a free first consult; nine topic chips give context before the conversation starts. Threads are kept under *My consultations* |
 | **Welcome guide** | Six cards shown once after sign-up — what the app is, why to start with the consultant, how search, costs and insurance work, and where the data lives. Re-openable any time from **Me → How this app works** |
 | **Onboarding** | Language choice (English / हिन्दी / বাংলা), mobile-OTP flow, profile: age, sex, city, ongoing conditions, insurer + plan, optional ABHA ID |
 | **Problem → specialty** | Type the problem in plain words ("sugar high, always thirsty") → rule-based routing to the right specialty, with **red-flag emergency warnings** |
@@ -96,6 +107,16 @@ device only; pooling ratings across patients needs the Phase-II backend.
 | **My records** | Local notes for readings, prescriptions and report values |
 | **Emergency** | One-tap dial for 108 / 112 / 104 / 14416 / 1098 / 181 / 14555 plus the nearest hospitals with a 24×7 emergency unit |
 | **Pilot metrics** | On-device funnel (search → doctor view → booking → completed → rated) with conversion rates, so a pilot team can read retention and conversion without any server or tracking SDK |
+
+### Branding
+
+The Doers and Thinkers mark appears on the launch screen, in the app bar, on the
+consultant card, on the first card of the welcome guide and on the About screen.
+The native launch window (`res/drawable/launch_screen.xml`) is deliberately the
+same picture as the in-app splash, so there is no flash of a different colour
+between the two. The launcher icon stays the existing teal cross: the brand mark
+is fine line art with wordmarks that do not resolve at launcher-icon sizes or
+survive adaptive-icon cropping.
 
 ### Why it all runs on the phone
 
@@ -112,13 +133,13 @@ no signal.
 
 Captured from the UI test run; the full set lands in `build/screens/`.
 
-| Welcome guide | Consultant | Consult chat | Home |
+| Splash | Welcome guide | Consultant | Consult chat |
 |---|---|---|---|
-| ![Guide](docs/screenshots/06-guide-consultant.png) | ![Consultant](docs/screenshots/07-consult-hub.png) | ![Consult chat](docs/screenshots/09-consult-chat.png) | ![Home](docs/screenshots/11-home.png) |
+| ![Splash](docs/screenshots/00-splash.png) | ![Guide](docs/screenshots/06-guide-consultant.png) | ![Consultant](docs/screenshots/07-consult-hub.png) | ![Consult chat](docs/screenshots/09-consult-chat.png) |
 
-| Search results | Doctor profile | Cost estimate | Insurance check |
+| Home | Search results | Cost estimate | Insurance check |
 |---|---|---|---|
-| ![Search](docs/screenshots/13-search-results.png) | ![Doctor](docs/screenshots/15-doctor-detail.png) | ![Cost](docs/screenshots/18-cost-estimate.png) | ![Insurance](docs/screenshots/20-insurance-check.png) |
+| ![Home](docs/screenshots/11-home.png) | ![Search](docs/screenshots/13-search-results.png) | ![Cost](docs/screenshots/18-cost-estimate.png) | ![Insurance](docs/screenshots/20-insurance-check.png) |
 
 ### The blueprint's Siliguri scenario, end to end
 
@@ -126,7 +147,7 @@ The 45-year-old woman in Siliguri with type-2 diabetes is the app's main test
 path (asserted in `tools/test/ui-smoke.js`):
 
 1. Signs up with mobile OTP → diabetes, 45, Siliguri, *Sanjeevani Health Insurance — Silver*, then reads the six-card welcome guide.
-2. Lands on the consultant and messages Dr. Sashanka Dey: *"sugar is high and I do not know which doctor to see"* — and is told to start with a physician unless the first tests point elsewhere, which saves a specialist's fee.
+2. Lands on the consultant and messages the care desk: *"sugar is high and I do not know which doctor to see"* — and is told to start with a physician unless the first tests point elsewhere, which saves a specialist's fee.
 3. Types "sugar high and always thirsty" → routed to **Endocrinology**, with a red-flag warning for ketoacidosis symptoms.
 4. Filters to Siliguri + *accepts my insurance* + OPD under ₹700 → 3 doctors, from a ₹10–50 district-hospital OPD to a ₹450–700 specialist.
 5. Doctor profile shows OPD ₹450–700, commonly advised tests (HbA1c, FBS, PPBS, lipid, KFT, urine microalbumin) and an **estimated total** for the visit.
@@ -140,7 +161,7 @@ path (asserted in `tools/test/ui-smoke.js`):
 
 **On your own phone**
 
-1. Copy `dist/MedicalNavigator-v1.1.1.apk` to the phone (WhatsApp, Drive, USB, email).
+1. Copy `dist/MedicalNavigator-v1.2.0.apk` to the phone (WhatsApp, Drive, USB, email).
 2. Open it. Android will ask to allow installs from that source — allow it for
    that app only (Settings → Apps → *the app you opened it from* → Install unknown apps).
 3. Play Protect may warn that the app is not from the Play Store; choose
@@ -215,9 +236,9 @@ MainActivity (WebView host)  ──addJavascriptInterface──▶  NativeBridge
 | File | Role |
 |---|---|
 | `app/src/main/java/.../MainActivity.java` | Single activity, WebView configuration, external-scheme handling (`tel:`, share), hardware-back contract |
-| `.../NativeBridge.java` | The **only** surface the UI can reach: one `call(op, json)` data entrypoint plus share / dial / clipboard / toast / haptics. No reflection, no generic intent launching |
+| `.../NativeBridge.java` | The **only** surface the UI can reach: one `call(op, json)` data entrypoint plus share / dial / email / clipboard / toast / haptics. Email uses `ACTION_SENDTO` on a `mailto:` URI, so only mail apps can claim it. No reflection, no generic intent launching |
 | `.../Repo.java` | Every query and mutation, 29 operations, JSON in / JSON out — the shape a Phase-II REST backend would take. Care-team threads and doctor teleconsults share one `messages` table, so `send_message` resolves whichever owns the thread id |
-| `.../DbHelper.java` | Schema (20 tables) and seeding, with a migration for the consultant tables added in v1.1.0. Reference data is disposable and re-seeded on upgrade; patient data is never touched |
+| `.../DbHelper.java` | Schema (20 tables) and seeding, with migrations for the consultant tables (v1.1.0) and the consultant email column (v1.2.0). Reference data is disposable and re-seeded on upgrade; patient data is never touched |
 | `.../SeedData.java` | The shipped pilot dataset as pipe-delimited rows |
 | `app/src/main/assets/www/` | The UI: `native.js` (bridge), `i18n.js` (en/hi/bn), `ui.js` (DOM toolkit), `cards.js`, `app.js` (router + state), `screens/*.js` — including `consult.js` (the consultant) and `guide.js` (the welcome guide) |
 
@@ -242,14 +263,14 @@ Native or Flutter later does not change the `Repo` contract.
 ## 5. Tests
 
 ```bash
-NODE_PATH=$(npm root -g) node tools/test/ui-smoke.js     # 85 assertions
+NODE_PATH=$(npm root -g) node tools/test/ui-smoke.js     # 98 assertions
 ```
 
 This drives **the exact assets that ship in the APK** in headless Chromium over
 `file://` — the same scheme and CSP the WebView uses — against a bridge test
 double (`tools/test/mock-bridge.js`) backed by the **real seed data**, parsed
 straight out of `SeedData.java` by `tools/test/seed-parser.js`. It walks the
-whole journey (onboarding → welcome guide → consultant → consult chat → callback
+whole journey (splash branding → onboarding → welcome guide → consultant → consult chat → email
 → triage → search → filters → doctor → booking → teleconsult → cost → insurance
 → rating → records → metrics → emergency), asserts the native hand-offs fire,
 checks the back-button contract and the three languages, fails on any console
@@ -274,7 +295,8 @@ they matter:
 - **All provider data is fictional.** Doctors, hospitals, labs and insurers are invented; fees and test prices are indicative bands, not quotations. Real listings require consent-verified onboarding and a curated feed.
 - **Policy clauses are illustrative sample wording**, not any real product's terms. Insurer names are fictional; the two government schemes (PM-JAY, Swasthya Sathi) are described only in broad, publicly documented terms.
 - **The consultant profile is placeholder data** and the replies — like the teleconsult replies — come from a fixed rule table, not a live clinician. The chat says so at the top of every thread. Availability, response times and fees are illustrative until a real clinician is rostered behind it.
-- **Callback, WhatsApp and video requests do not place a call.** There is no telephony behind this build, so those channels record the request and show what would happen; the app says this rather than pretending. The WhatsApp option does hand real text to the share sheet.
+- **The email channel is real, the mailbox is not monitored by this build.** Tapping *Email the consultant* genuinely opens the phone's mail app with a draft to `do3rs.and.th1nkers@gmail.com`; whether anyone answers is an operational matter, not a code one.
+- **There is no phone, WhatsApp or video channel.** In-app message and email are the only two ways to reach the consultant, by design.
 - **Teleconsult replies come from a fixed rule table**, not a clinician. This is stated in the chat itself.
 - **OTP is generated and displayed on the device** — no SMS gateway (MSG91 / Twilio) is wired up.
 - **No payment gateway**, so no money moves and no real appointment is created.
@@ -288,7 +310,7 @@ they matter:
 
 ## 7. Roadmap
 
-**Phase-I (pilot readiness)** — roster the consultant for real (and add an after-hours associate, a care coordinator and an insurance desk, which the seed's `role` column already supports) and put a telephony/WhatsApp Business channel behind the callback requests; real provider onboarding with consent and verification; SMS OTP gateway; server-side directory with an offline cache; clinician review of the triage table and every red flag; a device smoke-test matrix; legal review of the insurance wording.
+**Phase-I (pilot readiness)** — roster the consultant for real (and add an after-hours associate, a care coordinator and an insurance desk, which the seed's `role` column already supports) and route the shared inbox into a ticketed queue; real provider onboarding with consent and verification; SMS OTP gateway; server-side directory with an offline cache; clinician review of the triage table and every red flag; a device smoke-test matrix; legal review of the insurance wording.
 
 **Phase-II** — real doctor availability and calendars; live chat plus WebRTC video; payments (UPI); policy-document parsing; ABDM/ABHA record linking; TPA/insurer API integration for genuine pre-auth status; lab-partner booking and home collection; clinician-reviewed Hindi/Bengali clinical content.
 
@@ -303,7 +325,7 @@ app/src/main/
   AndroidManifest.xml
   java/com/mednav/navigator/   MainActivity, NativeBridge, Repo, DbHelper, SeedData
   res/                         icon (adaptive + generated PNG), theme, launch screen
-  assets/www/                  the SPA (screens/consult.js = consultant, guide.js = welcome guide)
+  assets/www/                  the SPA (img/logo.jpg, screens/consult.js, screens/guide.js)
 tools/
   fetch-toolchain.sh           pulls the Maven-only build toolchain
   build.sh                     aapt2 -> javac -> dx -> align -> sign -> verify
@@ -311,7 +333,7 @@ tools/
   mkicon.py                    generates the legacy launcher PNG with no image libraries
   signer/ApkTool.java          apksig-based signer + verifier
   test/                        seed parser, bridge test double, UI smoke test
-dist/MedicalNavigator-v1.1.1.apk
+dist/MedicalNavigator-v1.2.0.apk
 ```
 
 ---

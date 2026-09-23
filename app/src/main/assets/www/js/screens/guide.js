@@ -41,7 +41,9 @@
       view.appendChild(dots);
 
       view.appendChild(el('div.guide-card' + (spec.primary ? ' primary' : ''), null, [
-        el('div.guide-icon', { text: spec.icon }),
+        page === 0
+          ? el('img.brand-mark.lead.on-card', { src: 'img/logo.jpg', alt: '' })
+          : el('div.guide-icon', { text: spec.icon }),
         el('h1.guide-title', { text: I18n.t(spec.key + '_title') }),
         el('p.guide-body', { text: I18n.t(spec.key + '_body') }),
         spec.primary
@@ -79,7 +81,8 @@
 
       if (page === 0) {
         view.appendChild(el('p.tiny.muted.center', {
-          style: 'margin-top:14px', text: I18n.t('not_medical_advice')
+          style: 'margin-top:14px',
+          text: I18n.t('company_line') + ' · ' + I18n.t('not_medical_advice')
         }));
       }
     }

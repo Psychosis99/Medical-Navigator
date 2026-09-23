@@ -731,7 +731,7 @@ final class Repo {
     private JSONObject createConsultRequest(JSONObject a) throws JSONException {
         SQLiteDatabase db = helper.getWritableDatabase();
         String consultantId = a.optString("consultantId", "");
-        String channel = a.optString("channel", "chat");   // chat|call|whatsapp|video
+        String channel = a.optString("channel", "chat");   // chat | email
 
         JSONArray found = rows(db, "SELECT * FROM consultants WHERE id = ?",
                 new String[]{consultantId});
@@ -759,9 +759,8 @@ final class Repo {
         String greetingName = TextUtils.isEmpty(patientName) ? ""
                 : (" " + patientName.split(" ")[0]);
         if ("chat".equals(channel)) {
-            insertMessage(db, id, "doctor", "Namaskar" + greetingName + ", I am "
-                    + consultant.optString("name") + ", "
-                    + consultant.optString("title") + ". "
+            insertMessage(db, id, "doctor", "Namaskar" + greetingName + ", you are"
+                    + " through to the " + consultant.optString("title") + ". "
                     + consultant.optString("sla") + ". Tell me what is going on in"
                     + " your own words - when it started, what you have already"
                     + " taken, and any report values you have.");
@@ -772,9 +771,10 @@ final class Repo {
                         a.optString("note").toLowerCase(Locale.ENGLISH)));
             }
         } else {
-            insertMessage(db, id, "doctor", "Request received. "
-                    + consultant.optString("name") + " will reach you on "
-                    + channelLabel(channel) + ". " + consultant.optString("sla") + ".");
+            insertMessage(db, id, "doctor", "Request noted. The consultant will"
+                    + " reply by " + channelLabel(channel) + " to "
+                    + consultant.optString("email") + ". "
+                    + consultant.optString("sla") + ".");
         }
         event(db, "consult_request", "channel=" + channel + ";consultant=" + consultantId);
 
@@ -816,9 +816,7 @@ final class Repo {
     }
 
     private static String channelLabel(String channel) {
-        if ("call".equals(channel)) return "a phone call";
-        if ("whatsapp".equals(channel)) return "WhatsApp";
-        if ("video".equals(channel)) return "a video consult";
+        if ("email".equals(channel)) return "email";
         return "chat";
     }
 

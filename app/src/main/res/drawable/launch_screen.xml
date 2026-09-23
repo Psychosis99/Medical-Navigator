@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Static launch window: brand fill + centred mark, shown until the WebView paints. -->
+<!-- Static launch window, shown until the WebView paints. Deliberately the same
+     picture as the HTML splash in assets/www so there is no flash between them. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@color/brand_teal" />
+    <item android:drawable="@android:color/white" />
     <item
-        android:drawable="@drawable/ic_launcher_foreground"
+        android:drawable="@drawable/brand_logo"
         android:gravity="center"
-        android:width="180dp"
-        android:height="180dp" />
+        android:width="190dp"
+        android:height="190dp" />
 </layer-list>

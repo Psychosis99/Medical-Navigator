@@ -82,6 +82,15 @@ async function main() {
 
   console.log('\nLoading the packaged UI over file:// ...');
   await page.goto('file://' + path.join(WWW, 'index.html'));
+  await page.waitForTimeout(120);
+  // The splash is still up at this point: check the branding before it fades.
+  check('splash names the app', (await page.textContent('#splash')).includes('Medical Navigator'));
+  check('splash credits the company',
+    (await page.textContent('#splash')).includes('Doers and Thinkers Pvt. Ltd.'));
+  check('splash logo resolves',
+    (await page.evaluate(() => { const i = document.querySelector('.splash-logo');
+      return i && i.complete && i.naturalWidth > 0; })) === true);
+  await shot('00-splash');
   await page.waitForTimeout(900);
 
   // ---- CSP sanity: the WebView loads these same files under the same policy ----
@@ -152,15 +161,19 @@ async function main() {
   check('guide has a finishing action', text.includes('Start using the app'));
   await tapButton('Start using the app');
   await page.waitForTimeout(300);
-  check('guide hands over to the care team',
-    (await body()).includes('Dr. Sashanka Dey'));
+  check('guide hands over to the consultant',
+    (await body()).includes('Our Lead Consultant'));
   check('guide is not shown again',
     (await page.evaluate(() => Store.hasSeenGuide())) === true);
 
   // ---- the care team: the app's primary feature ----
   console.log('\nCare team');
   text = await body();
-  check('primary consultant named', text.includes('Lead Consultant'));
+  check('consultant shown by role', text.includes('Our Lead Consultant'));
+  check('no personal name anywhere in the app', !/\b(Sashanka|Ipsita|Sengupta|Arnab|Tamang|Mitra)\b/.test(text));
+  check('consultant email published', text.includes('do3rs.and.th1nkers@gmail.com'));
+  check('no phone or WhatsApp channel offered',
+    !text.includes('Request a call back') && !text.includes('Chat on WhatsApp'));
   check('availability shown', text.includes('Available now') || text.includes('Away right now'));
   check('consult topics offered', text.includes('Which doctor should I see?'));
   check('no empty team section while there is only one consultant',
@@ -179,7 +192,7 @@ async function main() {
   await page.waitForTimeout(350);
   text = await body();
   check('consult thread opens with the consultant greeting',
-    text.includes('I am Dr. Sashanka Dey'));
+    text.includes('you are through to the Medical Navigator Care Desk'));
   check('the patient note is carried into the thread',
     text.includes('which doctor to see'));
   check('consultant answers the routing question',
@@ -205,20 +218,25 @@ async function main() {
   await page.waitForTimeout(250);
   check('the open consultation is listed', (await body()).includes('Open conversation'));
 
-  // a callback request goes through the non-chat path
-  await tapButton('Request a call back');
+  // the email channel hands a pre-filled draft to the phone's mail app
+  await tapButton('Email the consultant');
   await page.waitForTimeout(200);
-  await page.locator('.sheet textarea.input').fill('please call about my mother');
+  await page.locator('.sheet textarea.input').fill('please advise about my mother');
+  await shot('10-consult-email');
   await tapSheetButton('Send request');
   await page.waitForTimeout(300);
-  text = await body();
-  check('callback confirmation shown', text.includes('will reach you'));
-  check('callback is honest that no call is placed',
-    text.includes('no call is actually placed'));
-  await shot('10-consult-callback');
+  const mail = await page.evaluate(() => window.__MEDNAV_EMAIL);
+  check('email handed to the native layer', !!mail);
+  check('addressed to the published inbox',
+    mail && mail.to === 'do3rs.and.th1nkers@gmail.com');
+  check('draft carries the note', mail && mail.body.includes('about my mother'));
+  check('draft carries the patient context',
+    mail && mail.body.includes('Sunita') && mail.body.includes('Siliguri'));
+  check('confirmation names the inbox',
+    (await body()).includes('do3rs.and.th1nkers@gmail.com'));
   await tapSheetButton('Done');
   await page.waitForTimeout(250);
-  check('callback request recorded',
+  check('email request recorded',
     (await page.evaluate(() => Native.call('consult_requests', {}).requests.length)) === 2);
 
   await page.evaluate(() => Router.tab('home'));
@@ -394,6 +412,24 @@ async function main() {
   text = await body();
   check('about screen states the limitations', text.includes('fictional sample data'));
   check('about screen shows the version', text.includes('1.0.0-test'));
+  check('about screen credits the company',
+    text.includes('An initiative of Doers and Thinkers Pvt. Ltd.'));
+  check('about screen publishes the contact email',
+    text.includes('do3rs.and.th1nkers@gmail.com'));
+  // The brand mark takes the app bar's leading slot only at the root of a tab;
+  // deeper screens put the back arrow there instead.
+  check('app bar carries the logo at the root',
+    (await page.evaluate(() => {
+      Router.tab('home');
+      const i = document.querySelector('.appbar .brand-mark');
+      return !!i && i.complete && i.naturalWidth > 0;
+    })) === true);
+  check('deeper screens show a back arrow instead',
+    (await page.evaluate(() => {
+      Router.go('about', {});
+      return !document.querySelector('.appbar .brand-mark')
+        && !!document.querySelector('.appbar .icon-btn');
+    })) === true);
   await shot('26-about');
 
   // ---- emergency + device hand-offs ----

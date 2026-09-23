@@ -14,7 +14,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 final class DbHelper extends SQLiteOpenHelper {
 
     static final String DB_NAME = "mednav.db";
-    static final int DB_VERSION = 2;   // v2: in-house care team + consult requests
+    static final int DB_VERSION = 3;   // v3: consultant email channel
 
     DbHelper(Context ctx) {
         super(ctx, DB_NAME, null, DB_VERSION);
@@ -74,7 +74,8 @@ final class DbHelper extends SQLiteOpenHelper {
                 + "id TEXT PRIMARY KEY, name TEXT, role TEXT, title TEXT,"
                 + "qualification TEXT, specialty TEXT, exp_years INTEGER,"
                 + "languages TEXT, hours TEXT, sla TEXT, fee_note TEXT,"
-                + "rating REAL, rating_count INTEGER, helps_with TEXT, bio TEXT)");
+                + "rating REAL, rating_count INTEGER, helps_with TEXT, bio TEXT,"
+                + "email TEXT)");
 
         db.execSQL("CREATE TABLE consult_topics("
                 + "id TEXT PRIMARY KEY, label TEXT, role TEXT, hint TEXT)");
@@ -126,13 +127,24 @@ final class DbHelper extends SQLiteOpenHelper {
                     + "id TEXT PRIMARY KEY, name TEXT, role TEXT, title TEXT,"
                     + "qualification TEXT, specialty TEXT, exp_years INTEGER,"
                     + "languages TEXT, hours TEXT, sla TEXT, fee_note TEXT,"
-                    + "rating REAL, rating_count INTEGER, helps_with TEXT, bio TEXT)");
+                    + "rating REAL, rating_count INTEGER, helps_with TEXT, bio TEXT,"
+                    + "email TEXT)");
             db.execSQL("CREATE TABLE IF NOT EXISTS consult_topics("
                     + "id TEXT PRIMARY KEY, label TEXT, role TEXT, hint TEXT)");
             db.execSQL("CREATE TABLE IF NOT EXISTS consult_requests("
                     + "id TEXT PRIMARY KEY, consultant_id TEXT, channel TEXT,"
                     + "topic TEXT, note TEXT, preferred_time TEXT, status TEXT,"
                     + "created_ts INTEGER, rated INTEGER DEFAULT 0)");
+        }
+        if (oldVersion < 3) {
+            // v2 created consultants without an email column; add it before the
+            // re-seed below tries to write one.
+            try {
+                db.execSQL("ALTER TABLE consultants ADD COLUMN email TEXT");
+            } catch (android.database.SQLException alreadyThere) {
+                // v2 never shipped without the table, but an interrupted upgrade
+                // could leave the column present: nothing to do.
+            }
         }
         reseedReference(db);
     }
@@ -187,7 +199,7 @@ final class DbHelper extends SQLiteOpenHelper {
             insertRows(db, "consultants", SeedData.CONSULTANTS, new String[]{
                     "id", "name", "role", "title", "qualification", "specialty",
                     "exp_years", "languages", "hours", "sla", "fee_note",
-                    "rating", "rating_count", "helps_with", "bio"});
+                    "rating", "rating_count", "helps_with", "bio", "email"});
 
             insertRows(db, "consult_topics", SeedData.CONSULT_TOPICS, new String[]{
                     "id", "label", "role", "hint"});

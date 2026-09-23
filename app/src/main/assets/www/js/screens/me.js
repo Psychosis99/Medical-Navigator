@@ -426,14 +426,22 @@
   // ------------------------------------------------------------------
   // About
   // ------------------------------------------------------------------
+  /** Kept in one place so the address appears identically wherever it is shown. */
+  var BRAND_EMAIL = 'do3rs.and.th1nkers@gmail.com';
+
   Screens.about = {
     title: function () { return I18n.t('about'); },
     tab: null,
     render: function (params, view) {
       var info = Native.info();
       view.appendChild(UI.card([
-        el('div.strong', { style: 'font-size:17px', text: I18n.t('app_name') }),
-        el('p.small.muted', { text: I18n.t('tagline') }),
+        el('div.brand-footer', null, [
+          el('img.brand-mark', { src: 'img/logo.jpg', alt: '',
+            style: 'width:84px;height:84px' }),
+          el('div.strong', { style: 'font-size:17px', text: I18n.t('app_name') }),
+          el('div.line', { text: I18n.t('company_line') })
+        ]),
+        el('p.small.muted.center', { text: I18n.t('tagline') }),
         el('div.divider'),
         el('div.kv', null, [el('span.k', { text: 'Version' }),
           el('span.v', { text: info.versionName + ' (' + info.versionCode + ')' })]),
@@ -446,8 +454,17 @@
         el('div.kv', null, [el('span.k', { text: 'Device' }),
           el('span.v', { text: info.device })]),
         el('div.kv', null, [el('span.k', { text: 'Data' }),
-          el('span.v', { text: 'Local SQLite, offline' })])
+          el('span.v', { text: 'Local SQLite, offline' })]),
+        el('div.kv', null, [el('span.k', { text: I18n.t('email_label') }),
+          el('span.v', { text: BRAND_EMAIL })])
       ]));
+
+      view.appendChild(UI.button(I18n.t('email_us'), {
+        block: true, variant: 'ghost',
+        onclick: function () {
+          Native.email(BRAND_EMAIL, 'Medical Navigator - feedback', '');
+        }
+      }));
 
       view.appendChild(UI.section('What this build is', UI.card([
         el('p.small', { text: 'A pilot MVP for a patient-side medical navigator aimed at '
@@ -461,13 +478,15 @@
         el('ul', { style: 'padding-left:18px;margin:0' }, [
           el('li.small', { text: 'Doctors, hospitals, labs, fees and policy clauses are '
             + 'fictional sample data for the pilot, not real listings.' }),
-          el('li.small', { text: 'Teleconsult replies come from a fixed rule table, not a '
-            + 'real clinician.' }),
+          el('li.small', { text: 'The consultant is identified by role, not by name. '
+            + 'Replies come from a fixed rule table, not a live clinician.' }),
+          el('li.small', { text: 'The consultant is reachable by in-app message or '
+            + 'email only. There is no phone or video channel in this build.' }),
           el('li.small', { text: 'OTP is generated on the device; no SMS gateway is wired up.' }),
           el('li.small', { text: 'No payment gateway, so no money moves and no real '
             + 'appointment is created.' }),
-          el('li.small', { text: 'Policy document parsing, ABDM/ABHA linking and video '
-            + 'consults are Phase-II items.' })
+          el('li.small', { text: 'Policy document parsing, ABDM/ABHA linking and live '
+            + 'video consults are Phase-II items.' })
         ])
       ])));
 

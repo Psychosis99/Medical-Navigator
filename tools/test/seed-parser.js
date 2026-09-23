@@ -24,7 +24,7 @@ const COLUMNS = {
   CHAT_RULES: ['specialty', 'keywords', 'reply'],
   CONSULTANTS: ['id', 'name', 'role', 'title', 'qualification', 'specialty',
     'exp_years', 'languages', 'hours', 'sla', 'fee_note', 'rating', 'rating_count',
-    'helps_with', 'bio'],
+    'helps_with', 'bio', 'email'],
   CONSULT_TOPICS: ['id', 'label', 'role', 'hint']
 };
 

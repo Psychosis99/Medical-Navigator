@@ -38,7 +38,7 @@
 
       view.appendChild(el('div.consult-hero', null, [
         el('div.consult-hero-top', null, [
-          el('div.avatar.lead', { text: UI.initials(primary.name) }),
+          el('img.brand-mark.lead', { src: 'img/logo.jpg', alt: '' }),
           el('div.row-left', null, [
             el('div.consult-name', { text: primary.name }),
             el('div.consult-role', { text: primary.title }),
@@ -56,16 +56,11 @@
           block: true, variant: 'onbrand',
           onclick: function () { openRequest(primary, 'chat', ''); }
         }),
-        el('div.btn-grid', { style: 'margin-top:8px' }, [
-          UI.button(I18n.t('request_call'), {
-            variant: 'onbrand-ghost',
-            onclick: function () { openRequest(primary, 'call', ''); }
-          }),
-          UI.button(I18n.t('chat_whatsapp'), {
-            variant: 'onbrand-ghost',
-            onclick: function () { openRequest(primary, 'whatsapp', ''); }
-          })
-        ])
+        UI.button(I18n.t('email_us'), {
+          block: true, variant: 'onbrand-ghost',
+          onclick: function () { openRequest(primary, 'email', ''); }
+        }),
+        el('div.consult-email', { text: primary.email })
       ]));
 
       view.appendChild(el('div.banner.info', null, [
@@ -178,7 +173,7 @@
         (r.messageCount ? ' (' + r.messageCount + ')' : ''), {
         block: true, variant: 'ghost',
         onclick: function () {
-          Router.go('chat', { bookingId: r.id, title: r.consultant_name });
+          Router.go('chat', { bookingId: r.id, title: I18n.t('consult_title') });
         }
       })
     ]);
@@ -203,7 +198,7 @@
 
       view.appendChild(UI.card([
         el('div.doc', null, [
-          el('div.avatar.lead', { text: UI.initials(c.name) }),
+          el('img.brand-mark.lead.on-card', { src: 'img/logo.jpg', alt: '' }),
           el('div.row-left', null, [
             el('div.doc-name', { style: 'font-size:17px', text: c.name }),
             el('div.doc-meta', { text: c.title }),
@@ -234,7 +229,9 @@
         el('div.kv', null, [el('span.k', { text: 'Fees' }),
           el('span.v', { text: c.fee_note })]),
         el('div.kv', null, [el('span.k', { text: I18n.t('experience') }),
-          el('span.v', { text: c.exp_years + ' ' + I18n.t('years') })])
+          el('span.v', { text: c.exp_years + ' ' + I18n.t('years') })]),
+        el('div.kv', null, [el('span.k', { text: I18n.t('email_label') }),
+          el('span.v', { text: c.email })])
       ]));
 
       var ul = el('ul.checklist');
@@ -252,16 +249,11 @@
         block: true,
         onclick: function () { openRequest(c, 'chat', ''); }
       }));
-      view.appendChild(el('div.btn-grid', { style: 'margin-top:8px' }, [
-        UI.button(I18n.t('request_call'), {
-          variant: 'ghost',
-          onclick: function () { openRequest(c, 'call', ''); }
-        }),
-        UI.button(I18n.t('book_video'), {
-          variant: 'ghost',
-          onclick: function () { openRequest(c, 'video', ''); }
-        })
-      ]));
+      view.appendChild(el('div', { style: 'height:8px' }));
+      view.appendChild(UI.button(I18n.t('email_us'), {
+        block: true, variant: 'ghost',
+        onclick: function () { openRequest(c, 'email', ''); }
+      }));
     }
   };
 
@@ -299,14 +291,6 @@
     var noteInput = UI.el('textarea.input', {
       placeholder: hint || I18n.t('describe_briefly')
     });
-    var timeSelect = UI.select([
-      { value: 'As soon as possible', label: 'As soon as possible' },
-      { value: 'This morning', label: 'This morning' },
-      { value: 'This afternoon', label: 'This afternoon' },
-      { value: 'This evening', label: 'This evening' },
-      { value: 'Tomorrow', label: 'Tomorrow' }
-    ], 'As soon as possible');
-
     var body = [
       el('div.spread', { style: 'margin-bottom:10px' }, [
         el('div', null, [
@@ -322,7 +306,12 @@
       el('span', { text: topic })
     ]));
     body.push(UI.field(I18n.t('describe_briefly'), noteInput));
-    if (channel !== 'chat') body.push(UI.field(I18n.t('preferred_time'), timeSelect));
+    if (channel === 'email') {
+      body.push(el('div.banner.info', null, [
+        el('span.banner-icon', { text: '✉' }),
+        el('span', { text: I18n.t('email_handoff') + ' ' + consultant.email })
+      ]));
+    }
     body.push(el('p.tiny.muted', { text: consultant.sla + ' · ' + consultant.hours }));
 
     var close = UI.sheet(channelTitle(channel), body, [
@@ -334,8 +323,7 @@
             consultantId: consultant.id,
             channel: channel,
             topic: topic || '',
-            note: note,
-            preferredTime: channel === 'chat' ? '' : timeSelect.value
+            note: note
           });
           if (!res.ok) {
             UI.snack(res.error || 'Could not send the request');
@@ -345,42 +333,49 @@
           Native.tap(20);
 
           if (channel === 'chat') {
-            Router.go('chat', { bookingId: res.requestId, title: consultant.name });
+            Router.go('chat', { bookingId: res.requestId, title: I18n.t('consult_title') });
             return;
           }
-          if (channel === 'whatsapp') {
-            Native.share('Medical Navigator - consult request for '
-              + consultant.name + '\nTopic: ' + (topic || 'general')
-              + (note ? '\nDetails: ' + note : '')
-              + '\nPreferred time: ' + timeSelect.value);
-          }
-          confirmSheet(consultant, channel, timeSelect.value);
+          // Hand a pre-filled draft to whatever mail app the phone has.
+          Native.email(consultant.email,
+            'Medical Navigator - ' + (topic || 'consult request'),
+            buildEmailBody(topic, note));
+          confirmSheet(consultant);
         }
       })
     ]);
   }
 
   function channelTitle(channel) {
-    if (channel === 'call') return I18n.t('request_call');
-    if (channel === 'whatsapp') return I18n.t('chat_whatsapp');
-    if (channel === 'video') return I18n.t('book_video');
-    return I18n.t('start_chat');
+    return channel === 'email' ? I18n.t('email_us') : I18n.t('start_chat');
   }
 
-  function confirmSheet(consultant, channel, when) {
-    var phone = Store.profile().phone;
+  /** A mail body the consultant can act on without a follow-up round trip. */
+  function buildEmailBody(topic, note) {
+    var p = Store.profile();
+    var lines = [];
+    if (topic) lines.push('Topic: ' + topic);
+    if (note) lines.push('', note, '');
+    lines.push('---');
+    lines.push('Sent from the Medical Navigator app.');
+    if (p.name) lines.push('Name: ' + p.name);
+    if (p.age) lines.push('Age: ' + p.age);
+    if (p.city) lines.push('City: ' + p.city);
+    if (p.phone) lines.push('Phone: +91 ' + p.phone);
+    return lines.join('\n');
+  }
+
+  function confirmSheet(consultant) {
     var close = UI.sheet(I18n.t('request_sent'), [
       el('div.banner.info', null, [
-        el('span.banner-icon', { text: '✓' }),
-        el('span', { text: consultant.name + ' will reach you'
-          + (phone ? ' on +91 ' + phone : '') + ' — ' + when.toLowerCase() + '.' })
+        el('span.banner-icon', { text: '✉' }),
+        el('span', { text: I18n.t('email_opened') + ' ' + consultant.email })
       ]),
       el('p.small.muted', { text: consultant.sla + ' Working hours: ' + consultant.hours + '.' }),
-      el('div.banner.warn', null, [
-        el('span.banner-icon', { text: '⚠' }),
-        el('span', { text: 'Demo build: no call is actually placed. The request is '
-          + 'recorded in My consultations so the flow can be reviewed end to end.' })
-      ])
+      UI.button(I18n.t('copy_email'), {
+        block: true, variant: 'outline',
+        onclick: function () { Native.copy(consultant.email); }
+      })
     ], [
       UI.button(I18n.t('done'), {
         onclick: function () { close(); Router.render(); }

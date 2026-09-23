@@ -59,6 +59,11 @@ var Native = (function () {
       if (bridge) bridge.copy(text);
     },
 
+    email: function (to, subject, body) {
+      if (bridge) bridge.email(to, subject || '', body || '');
+      else console.log('[email]', to, subject, body);
+    },
+
     toast: function (message) {
       if (bridge) bridge.toast(message);
       else console.log('[toast]', message);
